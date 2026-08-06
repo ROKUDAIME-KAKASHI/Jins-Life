@@ -114,7 +114,7 @@ export function TranscriberClient() {
  setStatusMsg("Listening (Live & Diarized)...");
  setIsRecording(true);
  
- const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+ const mediaRecorder = new MediaRecorder(stream);
  mediaRecorderRef.current = mediaRecorder;
  
  mediaRecorder.ondataavailable = (event) => {
