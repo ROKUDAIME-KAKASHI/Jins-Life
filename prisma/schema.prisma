@@ -1,0 +1,235 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  status    String   @default("TODO") // "TODO", "IN_PROGRESS", "DONE"
+  dueDate   DateTime?
+  priority  String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  tags      String   // Stored as a comma-separated string
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  targetDate  DateTime?
+  status      String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, ACHIEVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Habit {
+  id            String   @id @default(cuid())
+  title         String
+  frequency     String   @default("DAILY") // DAILY, WEEKLY
+  streak        Int      @default(0)
+  lastCompleted DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Float
+  category    String   
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Journal {
+  id        String   @id @default(cuid())
+  entry     String
+  mood      String?  
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  isAllDay    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  birthday    DateTime?
+  notes       String?
+  lastContact DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HealthMetric {
+  id          String   @id @default(cuid())
+  type        String   // SLEEP, WATER, WEIGHT, WORKOUT
+  value       Float
+  unit        String   // hours, liters, kg, mins
+  date        DateTime @default(now())
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaItem {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // BOOK, MOVIE, ARTICLE, PODCAST
+  status      String   @default("TO_CONSUME") // TO_CONSUME, IN_PROGRESS, COMPLETED
+  rating      Int?     // 1-5
+  notes       String?
+  url         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FocusSession {
+  id          String   @id @default(cuid())
+  duration    Int      // minutes
+  task        String?  // what was worked on
+  startTime   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Routine {
+  id          String   @id @default(cuid())
+  title       String
+  timeOfDay   String   // MORNING, EVENING, ANYTIME
+  steps       RoutineStep[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RoutineStep {
+  id          String   @id @default(cuid())
+  title       String
+  isCompleted Boolean  @default(false)
+  routineId   String
+  routine     Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  type      String   // WEEKLY, MONTHLY
+  summary   String?
+  goals     String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Trip {
+  id          String   @id @default(cuid())
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  name        String
+  cost        Float
+  cycle       String   // MONTHLY, YEARLY
+  nextBilling DateTime?
+  url         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // TECH, HOME, VEHICLE
+  value       Float?
+  warranty    DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProactiveInsight {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  content   String
+  source    String   @default("USER") // USER, AI
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String         @id @default(cuid())
+  role      String         // "user" | "assistant" | "system" | "tool"
+  content   String
+  source    String?        // optional context like page path
+  rating    Int?           // 1 for thumbs up, -1 for thumbs down
+  feedback  String?        // optional user text feedback
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
