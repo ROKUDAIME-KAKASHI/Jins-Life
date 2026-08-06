@@ -251,19 +251,19 @@ export function TranscriberClient() {
  <div className="space-y-6">
  {transcriptParts.map((part, idx) => (
  <div key={idx} className="flex flex-col gap-1">
- <span className="text-xs font-bold uppercase tracking-wider text-indigo-500">
+ <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
  Speaker {part.speaker}
  </span>
- <p className="text-lg leading-relaxed">{part.text}</p>
+ <p className="text-lg leading-relaxed text-foreground font-medium">{part.text}</p>
  </div>
  ))}
  
  {interimText && (
- <div className="flex flex-col gap-1 opacity-70 animate-pulse">
- <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+ <div className="flex flex-col gap-1 animate-pulse">
+ <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60">
  Listening...
  </span>
- <p className="text-lg leading-relaxed italic text-muted-foreground">{interimText}</p>
+ <p className="text-lg leading-relaxed italic text-foreground/80">{interimText}</p>
  </div>
  )}
  </div>
