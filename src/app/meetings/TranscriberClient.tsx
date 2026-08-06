@@ -104,7 +104,7 @@ export function TranscriberClient() {
  return;
  }
 
- const socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&interim_results=true', [
+ const socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&interim_results=true&detect_language=true', [
  'token', apiKey
  ]);
  
