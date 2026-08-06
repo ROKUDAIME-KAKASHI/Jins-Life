@@ -19,6 +19,15 @@ export function TranscriberClient() {
  const [isSaving, setIsSaving] = useState(false);
  const [statusMsg, setStatusMsg] = useState("Ready");
  const [recordingSeconds, setRecordingSeconds] = useState(0);
+ const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+ const languages = [
+   { code: "en", name: "English" },
+   { code: "hi", name: "Hindi" },
+   { code: "ta", name: "Tamil" },
+   { code: "ml", name: "Malayalam" },
+   { code: "kn", name: "Kannada" }
+ ];
 
  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
  const socketRef = useRef<WebSocket | null>(null);
@@ -104,8 +113,10 @@ export function TranscriberClient() {
  return;
  }
 
- const socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&interim_results=true&detect_language=true', [
- 'token', apiKey
+ // Automatically omit nova-2 if it's a regional language that Nova-2 might not support natively yet, falling back to Deepgram's best available model.
+ const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
+ const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true`, [
+   'token', apiKey
  ]);
  
  socketRef.current = socket;
@@ -214,6 +225,17 @@ export function TranscriberClient() {
  )}
  </button>
  
+ <select 
+ value={selectedLanguage}
+ onChange={(e) => setSelectedLanguage(e.target.value)}
+ disabled={isRecording}
+ className="bg-black/5 dark:bg-white/5 border border-border rounded-full px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+ >
+ {languages.map((lang) => (
+ <option key={lang.code} value={lang.code}>{lang.name}</option>
+ ))}
+ </select>
+
  {isRecording && (
  <div className="flex flex-col">
  <div className="flex items-center gap-2 text-red-500 font-medium">
