@@ -126,8 +126,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const modelParam = (selectedLanguage === 'en') ? 'model=nova-2-meeting&' : ((selectedLanguage === 'hi') ? 'model=nova-2&' : '');
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000&keepalive=true`, [
+        const modelParam = (selectedLanguage === 'en') ? 'model=nova-2&' : ((selectedLanguage === 'hi') ? 'model=nova-2&' : '');
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&utterance_end_ms=1000&keepalive=true`, [
           'token', apiKey
         ]);
         
