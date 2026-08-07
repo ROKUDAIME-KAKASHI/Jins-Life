@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, X, Sparkles, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const SLASH_COMMANDS = [
  { cmd: "/task", desc: "Add a new to-do task" },
@@ -30,12 +30,17 @@ export function AIAssistantBubble() {
  const [input, setInput] = useState("");
  const [ratedMessages, setRatedMessages] = useState<Record<string, number>>({});
  const pathname = usePathname();
+ const router = useRouter();
  
  // @ts-ignore
  const { messages, sendMessage, status, error } = useChat({
  api: '/api/chat',
  maxSteps: 5,
- body: { currentPath: pathname }
+ body: { currentPath: pathname },
+ onFinish: () => {
+   // Refresh the page data so added tasks/notes appear immediately
+   router.refresh();
+ }
  });
  const msgs = messages as any[];
  

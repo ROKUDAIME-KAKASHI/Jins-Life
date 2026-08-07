@@ -373,5 +373,5 @@ BEHAVIOR RULES:
     }
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toDataStreamResponse();
 }
