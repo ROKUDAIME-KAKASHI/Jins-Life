@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Square, Save, Loader2, Volume2, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMeeting } from "../context/MeetingContext";
-import { useCompletion } from "@ai-sdk/react";
+import { useCompletion } from "ai/react";
 import { saveFinalTranscript } from "../server/actions";
 import Markdown from "react-markdown";
 
@@ -39,14 +39,9 @@ export function TranscriberClient() {
   };
 
   const getFullRawTranscript = () => {
-    const base = transcriptParts
+    return transcriptParts
       .map(part => `Speaker ${part.speaker}: ${part.text}`)
       .join('\n\n');
-      
-    if (interimText) {
-      return base + (base ? '\n\n' : '') + `Speaker (Ongoing): ${interimText}`;
-    }
-    return base;
   };
 
   const processAndSaveNote = async () => {

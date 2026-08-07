@@ -78,7 +78,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       }
       if (socketRef.current) {
         if (socketRef.current.readyState === WebSocket.OPEN) {
-          socketRef.current.send(JSON.stringify({ type: "CloseStream" }));
+          socketRef.current.send(new Blob([]));
         }
         setTimeout(() => {
           socketRef.current?.close();
@@ -97,13 +97,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       setStatusMsg("Connecting to Deepgram...");
       
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          } 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         // iOS/Android persistent background audio recording trick
         // Create an AudioContext to keep the browser alive
@@ -126,8 +120,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const modelParam = (selectedLanguage === 'en') ? 'model=nova-2&' : ((selectedLanguage === 'hi') ? 'model=nova-2&' : '');
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&utterance_end_ms=1000&keepalive=true`, [
+        const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true`, [
           'token', apiKey
         ]);
         
@@ -146,7 +140,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             }
           };
           
-          mediaRecorder.start(1000);
+          mediaRecorder.start(250);
         };
 
         socket.onmessage = (message) => {
@@ -157,10 +151,6 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             if (data.is_final) {
               if (alternative.words && alternative.words.length > 0) {
                 appendFinalWords(alternative.words);
-                setInterimText("");
-              } else if (transcript && transcript.trim().length > 0) {
-                // Fallback: If Deepgram provided a transcript but no word array
-                appendFinalWords([{ speaker: 0, word: transcript }]);
                 setInterimText("");
               }
             } else {
