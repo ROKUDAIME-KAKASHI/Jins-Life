@@ -1,4 +1,4 @@
-import { TranscriberClient } from "./TranscriberClient";
+import { TranscriberClient } from "@/features/meeting-transcriber";
 
 export default function MeetingsPage() {
  return (

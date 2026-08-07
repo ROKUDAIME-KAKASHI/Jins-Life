@@ -42,3 +42,20 @@ Your job is to generate a professional Meeting Document with the following struc
     return { success: false, error: "Failed to process transcript" };
   }
 }
+
+export async function saveFinalTranscript(cleanedTranscript: string) {
+  try {
+    const note = await prisma.note.create({
+      data: {
+        title: `Meeting Document - ${new Date().toLocaleString()}`,
+        content: cleanedTranscript,
+        tags: "meeting, transcript, ai-processed",
+      },
+    });
+    revalidatePath("/notes");
+    return { success: true, id: note.id };
+  } catch (error) {
+    console.error("Failed to save final transcript:", error);
+    return { success: false, error: "Failed to process transcript" };
+  }
+}

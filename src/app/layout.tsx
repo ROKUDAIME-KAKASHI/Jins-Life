@@ -6,6 +6,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { GlobalQuickAdd } from "@/components/GlobalQuickAdd";
 import { AIAssistantBubble } from "@/components/AIAssistantBubble";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { MeetingProvider } from "@/features/meeting-transcriber";
 
 const geistSans = Geist({
  variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
  >
  <body suppressHydrationWarning className="min-h-full flex flex-col relative bg-background text-foreground overflow-hidden">
  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+ <MeetingProvider>
  <div className="flex h-screen w-full overflow-hidden z-10 relative">
  <Sidebar />
  <main className="flex-1 overflow-auto">
@@ -44,6 +46,7 @@ export default function RootLayout({
  <CommandPalette />
  <GlobalQuickAdd />
  <AIAssistantBubble />
+ </MeetingProvider>
  </ThemeProvider>
  </body>
  </html>
