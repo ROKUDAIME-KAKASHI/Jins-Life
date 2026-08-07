@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { signOut } from "next-auth/react";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
  { name: "Dashboard", href: "/", icon: Home },
@@ -35,13 +36,37 @@ const navItems = [
 
 export function Sidebar() {
  const [isCollapsed, setIsCollapsed] = useState(false);
+ const [mobileOpen, setMobileOpen] = useState(false);
  const pathname = usePathname();
 
  return (
- <div className={`flex h-full flex-col border-r border-border bg-background/60 dark:bg-slate-950/60 shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.3)] z-20 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
+ <>
+ {/* Mobile Overlay */}
+ {mobileOpen && (
+   <div 
+     className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+     onClick={() => setMobileOpen(false)}
+   />
+ )}
+
+ {/* Mobile Toggle Button */}
+ <button
+   onClick={() => setMobileOpen(true)}
+   className="md:hidden fixed top-4 left-4 z-20 p-2 bg-background border border-border rounded-lg shadow-sm"
+ >
+   <Menu className="w-5 h-5" />
+ </button>
+
+ <div 
+   className={`fixed md:relative flex h-full flex-col border-r border-border bg-background/95 backdrop-blur-sm md:bg-background/60 dark:bg-slate-950/95 md:dark:bg-slate-950/60 shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.3)] z-40 transition-all duration-300 ease-in-out ${
+     mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
+   } ${
+     isCollapsed && !mobileOpen ? 'md:w-20' : 'md:w-64'
+   }`}
+ >
  {/* Header */}
- <div className={`flex h-16 items-center border-b border-border px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
- {!isCollapsed && (
+ <div className={`flex h-16 items-center border-b border-border px-4 ${isCollapsed && !mobileOpen ? 'justify-center' : 'justify-between'}`}>
+ {(!isCollapsed || mobileOpen) && (
               <Link href="/" className="flex items-center gap-3 font-semibold group overflow-hidden">
                 <div className="min-w-9 w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform border border-border">
                   <img src="/logo.jpg" alt="LifeOS Logo" className="w-full h-full object-cover" />
@@ -60,10 +85,21 @@ export function Sidebar() {
  <div className="flex items-center gap-1">
  <ThemeToggle />
  <button 
- onClick={() => setIsCollapsed(!isCollapsed)} 
+ onClick={() => {
+   if (window.innerWidth < 768) {
+     setMobileOpen(false);
+   } else {
+     setIsCollapsed(!isCollapsed);
+   }
+ }} 
  className="text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center w-9 h-9"
  >
- {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+ <span className="hidden md:block">
+   {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+ </span>
+ <span className="md:hidden">
+   <X className="w-5 h-5" />
+ </span>
  </button>
  </div>
  </div>
@@ -81,11 +117,11 @@ export function Sidebar() {
  isActive 
  ? 'bg-foreground/5 dark:bg-foreground/10 text-foreground font-semibold shadow-sm' 
  : 'text-slate-600 dark:text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
- } ${isCollapsed ? 'justify-center w-12 mx-auto' : 'gap-3 w-full'}`}
+ } ${(isCollapsed && !mobileOpen) ? 'justify-center w-12 mx-auto' : 'gap-3 w-full'}`}
  >
  <item.icon className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground dark:group-hover:text-white'}`} />
- {!isCollapsed && <span className="whitespace-nowrap text-sm truncate">{item.name}</span>}
- {isActive && !isCollapsed && (
+ {(!isCollapsed || mobileOpen) && <span className="whitespace-nowrap text-sm truncate">{item.name}</span>}
+ {isActive && (!isCollapsed || mobileOpen) && (
  <div className="absolute right-2 w-1.5 h-5 bg-foreground rounded-full shadow-sm"></div>
  )}
  </Link>
@@ -94,7 +130,7 @@ export function Sidebar() {
  </div>
 
  {/* System Status Footer */}
- {!isCollapsed && (
+ {(!isCollapsed || mobileOpen) && (
         <div className="p-4 border-t border-border bg-black/5 dark:bg-black/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
@@ -111,7 +147,8 @@ export function Sidebar() {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      )}
+       )}
  </div>
+ </>
  );
 }

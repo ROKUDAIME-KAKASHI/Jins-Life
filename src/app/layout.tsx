@@ -39,7 +39,7 @@ export default function RootLayout({
  <MeetingProvider>
  <div className="flex h-screen w-full overflow-hidden z-10 relative">
  <Sidebar />
- <main className="flex-1 overflow-auto">
+ <main className="flex-1 overflow-auto pt-16 md:pt-0 pb-20 md:pb-0">
  {children}
  </main>
  </div>

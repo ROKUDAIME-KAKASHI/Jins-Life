@@ -24,7 +24,7 @@ export default async function NotesPage() {
  });
 
  return (
- <div className="p-8 max-w-5xl mx-auto space-y-8 relative z-10">
+ <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8 relative z-10">
  <div className="flex justify-between items-end">
  <div>
  <h1 className="text-4xl font-black tracking-tight text-foreground capitalize">

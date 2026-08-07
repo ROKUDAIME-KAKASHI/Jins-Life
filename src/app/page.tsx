@@ -35,9 +35,9 @@ export default async function Home() {
  ]);
 
  return (
- <div className="flex-1 space-y-8 p-8 max-w-[1600px] mx-auto relative z-10">
+ <div className="flex-1 space-y-8 p-4 md:p-8 max-w-[1600px] mx-auto relative z-10">
  {/* Top Banner / Hero */}
- <div className="relative overflow-hidden rounded-3xl bg-card dark:from-indigo-900/40 dark:via-purple-900/40 dark:to-slate-900/40 border border-border p-8 shadow-sm ">
+ <div className="relative overflow-hidden rounded-3xl bg-card dark:from-indigo-900/40 dark:via-purple-900/40 dark:to-slate-900/40 border border-border p-5 md:p-8 shadow-sm ">
  <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
  <Sparkles className="w-48 h-48 text-indigo-500 dark:text-indigo-400" />
  </div>
