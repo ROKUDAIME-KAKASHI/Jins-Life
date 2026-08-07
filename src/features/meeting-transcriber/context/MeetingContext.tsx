@@ -121,7 +121,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000`, [
           'token', apiKey
         ]);
         
@@ -140,7 +140,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             }
           };
           
-          mediaRecorder.start(250);
+          mediaRecorder.start(1000);
         };
 
         socket.onmessage = (message) => {

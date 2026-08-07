@@ -39,9 +39,14 @@ export function TranscriberClient() {
   };
 
   const getFullRawTranscript = () => {
-    return transcriptParts
+    const base = transcriptParts
       .map(part => `Speaker ${part.speaker}: ${part.text}`)
       .join('\n\n');
+      
+    if (interimText) {
+      return base + (base ? '\n\n' : '') + `Speaker (Ongoing): ${interimText}`;
+    }
+    return base;
   };
 
   const processAndSaveNote = async () => {
