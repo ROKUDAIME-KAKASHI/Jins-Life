@@ -130,7 +130,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en') ? 'model=nova-2-meeting&' : ((selectedLanguage === 'hi') ? 'model=nova-2&' : '');
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000&keepalive=true`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000&keepalive=true&filler_words=true`, [
           'token', apiKey
         ]);
         
@@ -140,7 +140,9 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           setStatusMsg("Listening (Live & Diarized)...");
           setIsRecording(true);
           
-          const mediaRecorder = new MediaRecorder(stream);
+          const mediaRecorder = new MediaRecorder(stream, {
+            audioBitsPerSecond: 128000 // Force high bitrate to prevent muffled compression
+          });
           mediaRecorderRef.current = mediaRecorder;
           
           mediaRecorder.ondataavailable = (event) => {
