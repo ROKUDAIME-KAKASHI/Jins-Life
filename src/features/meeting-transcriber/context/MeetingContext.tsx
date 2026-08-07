@@ -99,10 +99,20 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+        // iOS/Android persistent background audio recording trick
+        // Create an AudioContext to keep the browser alive
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        const ac = new AudioContext();
-        audioContextRef.current = ac;
-        const source = ac.createMediaStreamSource(stream);
+        if (AudioContext) {
+            audioContextRef.current = new AudioContext();
+            const source = audioContextRef.current.createMediaStreamSource(stream);
+            const silentGain = audioContextRef.current.createGain();
+            silentGain.gain.value = 0; // completely silent
+            source.connect(silentGain);
+            silentGain.connect(audioContextRef.current.destination);
+            if (audioContextRef.current.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
+        }
 
         const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
         if (!apiKey) {
@@ -111,51 +121,26 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&encoding=linear16&sample_rate=${ac.sampleRate}`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true`, [
           'token', apiKey
         ]);
         
         socketRef.current = socket;
 
         socket.onopen = () => {
-          setStatusMsg("Listening (Raw Studio PCM)...");
+          setStatusMsg("Listening (Live & Diarized)...");
           setIsRecording(true);
           
-          if (ac.state === 'suspended') {
-            ac.resume();
-          }
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
           
-          const processor = ac.createScriptProcessor(4096, 1, 1);
-          
-          // CRITICAL: Store a hard reference to the processor on the window object 
-          // to prevent Chrome/Safari garbage collector from killing the onaudioprocess loop
-          (window as any).__sharedAudioProcessor = processor;
-          
-          source.connect(processor);
-          processor.connect(ac.destination);
-          
-          processor.onaudioprocess = (e) => {
-            if (socket.readyState === WebSocket.OPEN) {
-              const inputData = e.inputBuffer.getChannelData(0);
-              const int16Data = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) {
-                const s = Math.max(-1, Math.min(1, inputData[i]));
-                int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-              }
-              socket.send(int16Data.buffer);
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+              socket.send(event.data);
             }
           };
           
-          // Dummy MediaRecorder interface for stop logic
-          (mediaRecorderRef as any).current = {
-            state: 'recording',
-            stop: () => {
-              processor.disconnect();
-              source.disconnect();
-              (window as any).__sharedAudioProcessor = null;
-            },
-            stream: stream
-          };
+          mediaRecorder.start(250);
         };
 
         socket.onmessage = (message) => {
