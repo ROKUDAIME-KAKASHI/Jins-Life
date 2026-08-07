@@ -34,6 +34,8 @@ model Task {
   project   Project? @relation(fields: [projectId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 model Note {
@@ -156,6 +158,8 @@ model RoutineStep {
   routine     Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([routineId])
 }
 
 model Review {
@@ -232,5 +236,8 @@ model ChatMessage {
   feedback  String?        // optional user text feedback
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+
+  @@index([source])
+  @@index([createdAt])
 }
 

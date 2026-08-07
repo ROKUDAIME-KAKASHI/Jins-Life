@@ -78,7 +78,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       }
       if (socketRef.current) {
         if (socketRef.current.readyState === WebSocket.OPEN) {
-          socketRef.current.send(new Blob([]));
+          socketRef.current.send(JSON.stringify({ type: "CloseStream" }));
         }
         setTimeout(() => {
           socketRef.current?.close();
