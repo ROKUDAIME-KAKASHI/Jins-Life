@@ -101,10 +101,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true,
-            channelCount: 1,
-            sampleRate: 48000,
-            sampleSize: 16
+            autoGainControl: true
           } 
         });
 
@@ -140,9 +137,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           setStatusMsg("Listening (Live & Diarized)...");
           setIsRecording(true);
           
-          const mediaRecorder = new MediaRecorder(stream, {
-            audioBitsPerSecond: 128000 // Force high bitrate to prevent muffled compression
-          });
+          const mediaRecorder = new MediaRecorder(stream);
           mediaRecorderRef.current = mediaRecorder;
           
           mediaRecorder.ondataavailable = (event) => {
