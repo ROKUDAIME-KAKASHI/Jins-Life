@@ -99,20 +99,10 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        // iOS/Android persistent background audio recording trick
-        // Create an AudioContext to keep the browser alive
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioContext) {
-            audioContextRef.current = new AudioContext();
-            const source = audioContextRef.current.createMediaStreamSource(stream);
-            const silentGain = audioContextRef.current.createGain();
-            silentGain.gain.value = 0; // completely silent
-            source.connect(silentGain);
-            silentGain.connect(audioContextRef.current.destination);
-            if (audioContextRef.current.state === 'suspended') {
-                audioContextRef.current.resume();
-            }
-        }
+        const ac = new AudioContext();
+        audioContextRef.current = ac;
+        const source = ac.createMediaStreamSource(stream);
 
         const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
         if (!apiKey) {
@@ -121,26 +111,50 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&encoding=linear16&sample_rate=${ac.sampleRate}`, [
           'token', apiKey
         ]);
         
         socketRef.current = socket;
 
         socket.onopen = () => {
-          setStatusMsg("Listening (Live & Diarized)...");
+          setStatusMsg("Listening (Raw PCM - Microsoft Word Quality)...");
           setIsRecording(true);
           
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorderRef.current = mediaRecorder;
+          if (ac.state === 'suspended') {
+            ac.resume();
+          }
           
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-              socket.send(event.data);
+          const processor = ac.createScriptProcessor(4096, 1, 1);
+          
+          // CRITICAL: Anchor the processor to window so Chrome doesn't kill it after 10s
+          (window as any).__sharedAudioProcessor = processor;
+          
+          source.connect(processor);
+          processor.connect(ac.destination);
+          
+          processor.onaudioprocess = (e) => {
+            if (socket.readyState === WebSocket.OPEN) {
+              const inputData = e.inputBuffer.getChannelData(0);
+              const int16Data = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) {
+                const s = Math.max(-1, Math.min(1, inputData[i]));
+                int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+              }
+              socket.send(int16Data.buffer);
             }
           };
           
-          mediaRecorder.start(250);
+          // Dummy MediaRecorder interface for the stop function
+          (mediaRecorderRef as any).current = {
+            state: 'recording',
+            stop: () => {
+              processor.disconnect();
+              source.disconnect();
+              (window as any).__sharedAudioProcessor = null;
+            },
+            stream: stream
+          };
         };
 
         socket.onmessage = (message) => {
@@ -151,6 +165,10 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             if (data.is_final) {
               if (alternative.words && alternative.words.length > 0) {
                 appendFinalWords(alternative.words);
+                setInterimText("");
+              } else if (transcript && transcript.trim().length > 0) {
+                // CRITICAL FALLBACK: If we spoke too fast and Deepgram didn't provide a words array, don't drop the sentence!
+                appendFinalWords([{ speaker: 0, word: transcript }]);
                 setInterimText("");
               }
             } else {
