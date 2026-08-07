@@ -373,5 +373,5 @@ BEHAVIOR RULES:
     }
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }
