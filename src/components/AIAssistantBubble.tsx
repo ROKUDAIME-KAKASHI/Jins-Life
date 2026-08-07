@@ -33,7 +33,7 @@ export function AIAssistantBubble() {
  const router = useRouter();
  
  // @ts-ignore
- const { messages, sendMessage, status, error } = useChat({
+ const { messages, setMessages, sendMessage, status, error } = useChat({
  api: '/api/chat',
  maxSteps: 5,
  body: { currentPath: pathname },
@@ -42,6 +42,18 @@ export function AIAssistantBubble() {
    router.refresh();
  }
  });
+
+ useEffect(() => {
+   fetch('/api/chat/history')
+     .then(res => res.json())
+     .then(data => {
+       if (data && data.length > 0) {
+         setMessages(data);
+       }
+     })
+     .catch(console.error);
+ }, [setMessages]);
+
  const msgs = messages as any[];
  
  const isLoading = status === 'submitted' || status === 'streaming';
