@@ -130,7 +130,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en') ? 'model=nova-2-meeting&' : ((selectedLanguage === 'hi') ? 'model=nova-2&' : '');
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000&keepalive=true`, [
           'token', apiKey
         ]);
         
@@ -160,6 +160,10 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             if (data.is_final) {
               if (alternative.words && alternative.words.length > 0) {
                 appendFinalWords(alternative.words);
+                setInterimText("");
+              } else if (transcript && transcript.trim().length > 0) {
+                // Fallback: If Deepgram provided a transcript but no word array
+                appendFinalWords([{ speaker: 0, word: transcript }]);
                 setInterimText("");
               }
             } else {
