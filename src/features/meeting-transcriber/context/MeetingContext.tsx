@@ -121,7 +121,16 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           setStatusMsg("Listening (Raw Studio PCM)...");
           setIsRecording(true);
           
+          if (ac.state === 'suspended') {
+            ac.resume();
+          }
+          
           const processor = ac.createScriptProcessor(4096, 1, 1);
+          
+          // CRITICAL: Store a hard reference to the processor on the window object 
+          // to prevent Chrome/Safari garbage collector from killing the onaudioprocess loop
+          (window as any).__sharedAudioProcessor = processor;
+          
           source.connect(processor);
           processor.connect(ac.destination);
           
@@ -143,6 +152,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             stop: () => {
               processor.disconnect();
               source.disconnect();
+              (window as any).__sharedAudioProcessor = null;
             },
             stream: stream
           };
