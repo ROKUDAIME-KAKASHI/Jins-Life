@@ -69,21 +69,11 @@ export async function POST(req: Request) {
   // Log and persist the user's latest message
   const lastUserMessage = messages.slice().reverse().find((m: any) => m.role === 'user');
   if (lastUserMessage) {
-    await prisma.log.create({
-      data: {
-        content: lastUserMessage.content,
-        source: 'USER'
-      }
-    });
-    try {
-      await prisma.chatMessage.create({
-        data: {
-          role: 'user',
-          content: lastUserMessage.content,
-          source: currentPath,
-        }
-      });
-    } catch (e) {}
+    // Fire-and-forget logging to avoid blocking the stream response time
+    Promise.all([
+      prisma.log.create({ data: { content: lastUserMessage.content, source: 'USER' } }),
+      prisma.chatMessage.create({ data: { role: 'user', content: lastUserMessage.content, source: currentPath } })
+    ]).catch(e => console.error("Error logging chat:", e));
   }
 
   const systemInstruction = `You are the LifeOS AI Assistant. Your job is to help the user organize, manage, and optimize their life.
