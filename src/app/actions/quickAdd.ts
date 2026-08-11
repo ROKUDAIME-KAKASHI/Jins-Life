@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function createEntity(data: { type: string, title: string, amount: number }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   if (data.type === "task") {

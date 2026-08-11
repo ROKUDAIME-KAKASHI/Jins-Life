@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 
 export async function toggleTask(id: string, currentStatus: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   const newStatus = currentStatus === "DONE" ? "TODO" : "DONE";
@@ -21,7 +21,7 @@ export async function toggleTask(id: string, currentStatus: string) {
 
 export async function deleteTask(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   await prisma.task.delete({
@@ -33,7 +33,7 @@ export async function deleteTask(id: string) {
 
 export async function addTask(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   const title = formData.get("title") as string;

@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 
 export async function generateDailyInsight() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   const today = new Date();

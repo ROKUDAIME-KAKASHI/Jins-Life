@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function addEvent(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   const title = formData.get("title") as string;
@@ -29,7 +29,7 @@ export async function addEvent(formData: FormData) {
 
 export async function deleteEvent(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   if (!id) return;

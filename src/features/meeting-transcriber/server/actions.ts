@@ -9,7 +9,7 @@ import { mistral } from "@ai-sdk/mistral";
 
 export async function cleanAndSaveTranscript(rawTranscript: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   try {
@@ -51,7 +51,7 @@ Your job is to generate a professional Meeting Document with the following struc
 
 export async function saveFinalTranscript(cleanedTranscript: string, template: string = "MOM") {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   try {
@@ -73,7 +73,7 @@ export async function saveFinalTranscript(cleanedTranscript: string, template: s
 
 export async function getSavedTranscripts() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   try {

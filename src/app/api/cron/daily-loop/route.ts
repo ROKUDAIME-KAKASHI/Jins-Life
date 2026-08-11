@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
 // This endpoint can be triggered by a cron job (e.g., every morning at 6 AM)
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
   const authHeader = req.headers.get('authorization');
