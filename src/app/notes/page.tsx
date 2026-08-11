@@ -13,15 +13,15 @@ async function addNotes(formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
   const userId = session.user.id;
 
- const data: any = {};
- const title = formData.get("title") as string; if(title) data.title = title;
- const tags = formData.get("tags") as string; if(tags) data.tags = tags;
- const content = formData.get("content") as string; if(content) data.content = content;
- 
- if (Object.keys(data).length > 0) {
- await prisma.note.create({ data });
- revalidatePath("/notes");
- }
+  const data: any = { userId };
+  const title = formData.get("title") as string; if(title) data.title = title;
+  const tags = formData.get("tags") as string; if(tags) data.tags = tags;
+  const content = formData.get("content") as string; if(content) data.content = content;
+  
+  if (Object.keys(data).length > 1) {
+    await prisma.note.create({ data });
+    revalidatePath("/notes");
+  }
 }
 
 export default async function NotesPage() {
