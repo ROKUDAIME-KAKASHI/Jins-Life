@@ -20,29 +20,27 @@ export default async function TodayPage() {
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
 
-  const todayEvents = await prisma.event.findMany({
-    where: { userId,  startTime: { gte: startOfDay, lte: endOfDay } },
-    orderBy: { startTime: 'asc' }
-  });
-
-  const routines = await prisma.routine.findMany({ where: { userId },  include: { steps: true } });
-  const tasks = await prisma.task.findMany({ 
-    where: { userId,  status: "TODO" },
-    take: 5
-  });
-
-  const insight = await prisma.proactiveInsight.findUnique({
-    where: { date_userId: { date: startOfDay, userId } }
-  });
-
-  const recentExpenses = await prisma.expense.findMany({ where: { userId }, 
-    orderBy: { date: 'desc' },
-    take: 4
-  });
-
-  const habits = await prisma.habit.findMany({ where: { userId }, 
-    take: 4
-  });
+  const [todayEvents, routines, tasks, insight, recentExpenses, habits] = await Promise.all([
+    prisma.event.findMany({
+      where: { userId,  startTime: { gte: startOfDay, lte: endOfDay } },
+      orderBy: { startTime: 'asc' }
+    }),
+    prisma.routine.findMany({ where: { userId },  include: { steps: true } }),
+    prisma.task.findMany({ 
+      where: { userId,  status: "TODO" },
+      take: 5
+    }),
+    prisma.proactiveInsight.findUnique({
+      where: { date_userId: { date: startOfDay, userId } }
+    }),
+    prisma.expense.findMany({ where: { userId }, 
+      orderBy: { date: 'desc' },
+      take: 4
+    }),
+    prisma.habit.findMany({ where: { userId }, 
+      take: 4
+    })
+  ]);
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 relative z-10">
