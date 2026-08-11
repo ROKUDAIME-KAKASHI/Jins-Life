@@ -35,6 +35,10 @@ export function TranscriberClient() {
 
   const { completion, complete, isLoading } = useCompletion({
     api: "/api/meetings/process",
+    onError: (err) => {
+      console.error("Completion Error:", err);
+      alert(`Mistral Error: ${err.message}`);
+    }
   });
 
   const formatTime = (totalSeconds: number) => {
@@ -55,27 +59,30 @@ export function TranscriberClient() {
     const fullTranscript = getFullRawTranscript();
     if (!fullTranscript.trim()) return;
     
-    // Instead of doing it synchronously and timing out on mobile, we stream it!
-    const generatedDoc = await complete(fullTranscript, {
-      body: { template }
-    });
-    
-    if (generatedDoc) {
-      setIsSaving(true);
-      try {
-        const result = await saveFinalTranscript(generatedDoc, template);
-        if (result.success) {
-          resetRecording();
-          alert("Saved successfully to your notes!");
-        } else {
-          alert("Failed to save transcript.");
+    try {
+      const generatedDoc = await complete(fullTranscript, {
+        body: { template }
+      });
+      
+      if (generatedDoc) {
+        setIsSaving(true);
+        try {
+          const result = await saveFinalTranscript(generatedDoc, template);
+          if (result.success) {
+            resetRecording();
+            alert("Saved successfully to your notes!");
+          } else {
+            alert(`Failed to save transcript: ${result.error}`);
+          }
+        } catch (e: any) {
+          console.error(e);
+          alert(`Error saving note: ${e.message}`);
+        } finally {
+          setIsSaving(false);
         }
-      } catch (e) {
-        console.error(e);
-        alert("Error saving note.");
-      } finally {
-        setIsSaving(false);
       }
+    } catch (err: any) {
+      console.error("Process failed:", err);
     }
   };
 
