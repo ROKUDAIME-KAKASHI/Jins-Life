@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Timer } from "lucide-react";
@@ -17,7 +19,7 @@ async function addFocus(formData: FormData) {
 }
 
 export default async function FocusPage() {
- const items = await prisma.focusSession.findMany({
+ const items = await prisma.focusSession.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

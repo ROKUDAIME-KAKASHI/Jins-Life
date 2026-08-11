@@ -1,4 +1,6 @@
 "use server";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -6,6 +8,10 @@ import { generateText } from "ai";
 import { mistral } from "@ai-sdk/mistral";
 
 export async function cleanAndSaveTranscript(rawTranscript: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   try {
     // Use Mistral to clean up the transcript
     const { text: cleanedTranscript } = await generateText({
@@ -28,7 +34,7 @@ Your job is to generate a professional Meeting Document with the following struc
 
     // Save to database
     await prisma.note.create({
-      data: {
+      data: { userId, 
         title: `Meeting Transcript - ${new Date().toLocaleString()}`,
         content: cleanedTranscript,
         tags: "meeting, transcript, ai-cleaned",
@@ -44,10 +50,14 @@ Your job is to generate a professional Meeting Document with the following struc
 }
 
 export async function saveFinalTranscript(cleanedTranscript: string, template: string = "MOM") {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   try {
     const titlePrefix = template === "Report" ? "Report" : "Minutes of Meeting";
     const note = await prisma.note.create({
-      data: {
+      data: { userId, 
         title: `${titlePrefix} - ${new Date().toLocaleString()}`,
         content: cleanedTranscript,
         tags: "meeting, transcript, ai-processed",
@@ -62,9 +72,13 @@ export async function saveFinalTranscript(cleanedTranscript: string, template: s
 }
 
 export async function getSavedTranscripts() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   try {
     const notes = await prisma.note.findMany({
-      where: {
+      where: { userId, 
         tags: { contains: "meeting" }
       },
       orderBy: { createdAt: "desc" }

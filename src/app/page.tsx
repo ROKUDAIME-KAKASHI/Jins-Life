@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -28,9 +30,9 @@ const modules = [
 
 export default async function Home() {
  const [taskCount, habitCount, goalCount, latestInsight] = await Promise.all([
- prisma.task.count({ where: { status: "TODO" } }),
+ prisma.task.count({ where: { userId,  status: "TODO" } }),
  prisma.habit.count(),
- prisma.goal.count({ where: { status: "IN_PROGRESS" } }),
+ prisma.goal.count({ where: { userId,  status: "IN_PROGRESS" } }),
  prisma.proactiveInsight.findFirst({ orderBy: { createdAt: "desc" } }),
  ]);
 

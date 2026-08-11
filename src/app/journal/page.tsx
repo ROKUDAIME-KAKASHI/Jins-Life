@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { BookOpen } from "lucide-react";
@@ -17,7 +19,7 @@ async function addJournal(formData: FormData) {
 }
 
 export default async function JournalPage() {
- const items = await prisma.journal.findMany({
+ const items = await prisma.journal.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

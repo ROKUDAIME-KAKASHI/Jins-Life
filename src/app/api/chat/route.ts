@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 // @ts-nocheck
 import { streamText, tool, convertToModelMessages } from 'ai';
 import { google } from '@ai-sdk/google';
@@ -5,6 +7,10 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   const body = await req.json();
   const rawMessages = body.messages || [body];
   
@@ -58,8 +64,8 @@ export async function POST(req: Request) {
   let stateContext = '';
   try {
     const [pendingTasksCount, activeGoals] = await Promise.all([
-      prisma.task.count({ where: { status: 'TODO' } }),
-      prisma.goal.findMany({ take: 3, orderBy: { createdAt: 'desc' }, select: { title: true } }),
+      prisma.task.count({ where: { userId,  status: 'TODO' } }),
+      prisma.goal.findMany({ where: { userId },  take: 3, orderBy: { createdAt: 'desc' }, select: { title: true } }),
     ]);
     stateContext = `\n- Pending Tasks Count: ${pendingTasksCount}\n- Current Goals: ${activeGoals.map(g => g.title).join(', ') || 'None specified'}`;
   } catch (e) {
@@ -71,8 +77,8 @@ export async function POST(req: Request) {
   if (lastUserMessage) {
     // Fire-and-forget logging to avoid blocking the stream response time
     Promise.all([
-      prisma.log.create({ data: { content: lastUserMessage.content, source: 'USER' } }),
-      prisma.chatMessage.create({ data: { role: 'user', content: lastUserMessage.content, source: currentPath } })
+      prisma.log.create({ data: { userId,  content: lastUserMessage.content, source: 'USER' } }),
+      prisma.chatMessage.create({ data: { userId,  role: 'user', content: lastUserMessage.content, source: currentPath } })
     ]).catch(e => console.error("Error logging chat:", e));
   }
 
@@ -107,7 +113,7 @@ BEHAVIOR RULES:
         execute: async (args) => {
           try {
             const { title, content, tags } = args;
-            const note = await prisma.note.create({ data: { title, content, tags: tags || '' } });
+            const note = await prisma.note.create({ data: { userId,  title, content, tags: tags || '' } });
             return { success: true, message: `Note '${note.title}' created successfully`, id: note.id };
           } catch(e: any) { return { success: false, error: e.message }; }
         },
@@ -121,7 +127,7 @@ BEHAVIOR RULES:
         execute: async (args) => {
           try {
             const { entry, mood } = args;
-            const journal = await prisma.journal.create({ data: { entry, mood: mood || '' } });
+            const journal = await prisma.journal.create({ data: { userId,  entry, mood: mood || '' } });
             return { success: true, message: 'Journal entry logged', id: journal.id, mood: journal.mood };
           } catch(e: any) { return { success: false, error: e.message }; }
         },
@@ -136,7 +142,7 @@ BEHAVIOR RULES:
         execute: async (args) => {
           try {
             const { type, value, unit } = args;
-            const metric = await prisma.healthMetric.create({ data: { type, value, unit } });
+            const metric = await prisma.healthMetric.create({ data: { userId,  type, value, unit } });
             return { success: true, message: `Health metric ${type} (${value} ${unit}) logged`, id: metric.id };
           } catch(e: any) { return { success: false, error: e.message }; }
         },
@@ -151,7 +157,7 @@ BEHAVIOR RULES:
         execute: async (args) => {
           try {
             const { title, type, status } = args;
-            const media = await prisma.mediaItem.create({ data: { title, type, status } });
+            const media = await prisma.mediaItem.create({ data: { userId,  title, type, status } });
             return { success: true, message: `Added ${type}: ${title}`, id: media.id };
           } catch(e: any) { return { success: false, error: e.message }; }
         },
@@ -166,7 +172,7 @@ BEHAVIOR RULES:
         execute: async (args) => {
           try {
             const { name, cost, cycle } = args;
-            const sub = await prisma.subscription.create({ data: { name, cost, cycle } });
+            const sub = await prisma.subscription.create({ data: { userId,  name, cost, cycle } });
             return { success: true, message: `Subscription ${name} (₹${cost}/${cycle}) added`, id: sub.id };
           } catch(e: any) { return { success: false, error: e.message }; }
         },
@@ -180,7 +186,7 @@ BEHAVIOR RULES:
           email: z.string().optional(),
           notes: z.string().optional(),
         }),
-        execute: async (args) => { try { const { name, email, notes } = args; const item = await prisma.contact.create({ data: { name, email: email || '', notes: notes || '' } }); return { success: true, message: `Contact ${name} created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { name, email, notes } = args; const item = await prisma.contact.create({ data: { userId,  name, email: email || '', notes: notes || '' } }); return { success: true, message: `Contact ${name} created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createInventoryItem: tool({
         description: 'Add an item to the physical inventory/archive',
@@ -189,7 +195,7 @@ BEHAVIOR RULES:
           category: z.string(),
           value: z.number().optional().describe('Estimated value in Rupees'),
         }),
-        execute: async (args) => { try { const { name, category, value } = args; const item = await prisma.inventoryItem.create({ data: { name, category, value: value || 0 } }); return { success: true, message: `Inventory item '${name}' added`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { name, category, value } = args; const item = await prisma.inventoryItem.create({ data: { userId,  name, category, value: value || 0 } }); return { success: true, message: `Inventory item '${name}' added`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createProject: tool({
         description: 'Create a new project',
@@ -197,7 +203,7 @@ BEHAVIOR RULES:
           title: z.string(),
           description: z.string().optional(),
         }),
-        execute: async (args) => { try { const { title, description } = args; const item = await prisma.project.create({ data: { title, description: description || '' } }); return { success: true, message: `Project '${title}' created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { title, description } = args; const item = await prisma.project.create({ data: { userId,  title, description: description || '' } }); return { success: true, message: `Project '${title}' created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createTrip: tool({
         description: 'Plan a new trip or travel',
@@ -206,7 +212,7 @@ BEHAVIOR RULES:
           startDate: z.string().describe('ISO date'),
           endDate: z.string().describe('ISO date'),
         }),
-        execute: async (args) => { try { const { destination, startDate, endDate } = args; const item = await prisma.trip.create({ data: { destination, startDate: new Date(startDate), endDate: new Date(endDate) } }); return { success: true, message: `Trip to ${destination} scheduled`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { destination, startDate, endDate } = args; const item = await prisma.trip.create({ data: { userId,  destination, startDate: new Date(startDate), endDate: new Date(endDate) } }); return { success: true, message: `Trip to ${destination} scheduled`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createReview: tool({
         description: 'Log a weekly or monthly life review',
@@ -214,7 +220,7 @@ BEHAVIOR RULES:
           type: z.string().describe('WEEKLY or MONTHLY'),
           summary: z.string(),
         }),
-        execute: async (args) => { try { const { type, summary } = args; const item = await prisma.review.create({ data: { type, summary } }); return { success: true, message: `${type} review logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { type, summary } = args; const item = await prisma.review.create({ data: { userId,  type, summary } }); return { success: true, message: `${type} review logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createRoutine: tool({
         description: 'Add a new daily/weekly routine',
@@ -222,7 +228,7 @@ BEHAVIOR RULES:
           title: z.string(),
           timeOfDay: z.string().describe('MORNING, EVENING, or ANYTIME'),
         }),
-        execute: async (args) => { try { const { title, timeOfDay } = args; const item = await prisma.routine.create({ data: { title, timeOfDay } }); return { success: true, message: `Routine '${title}' (${timeOfDay}) created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { title, timeOfDay } = args; const item = await prisma.routine.create({ data: { userId,  title, timeOfDay } }); return { success: true, message: `Routine '${title}' (${timeOfDay}) created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
       createFocusSession: tool({
         description: 'Log a focus/deep-work session',
@@ -230,7 +236,7 @@ BEHAVIOR RULES:
           duration: z.number().describe('Duration in minutes'),
           task: z.string().optional(),
         }),
-        execute: async (args) => { try { const { duration, task } = args; const item = await prisma.focusSession.create({ data: { duration, task: task || '' } }); return { success: true, message: `${duration} minute focus session logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { duration, task } = args; const item = await prisma.focusSession.create({ data: { userId,  duration, task: task || '' } }); return { success: true, message: `${duration} minute focus session logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
       }),
 
       createTask: tool({
@@ -239,7 +245,7 @@ BEHAVIOR RULES:
           title: z.string().describe('The description of the task'),
           dueDate: z.string().optional().describe('ISO date string if a date/time is mentioned, else omit'),
         }),
-        execute: async (args) => { try { const { title, dueDate } = args; const task = await prisma.task.create({ data: {
+        execute: async (args) => { try { const { title, dueDate } = args; const task = await prisma.task.create({ data: { userId, 
               title,
               dueDate: dueDate ? new Date(dueDate) : null,
             } }); return { success: true, message: `Task '${title}' created successfully`, id: task.id, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: e.message }; } },
@@ -251,7 +257,7 @@ BEHAVIOR RULES:
           startTime: z.string().describe('ISO date string for when the event starts'),
           endTime: z.string().describe('ISO date string for when the event ends'),
         }),
-        execute: async (args) => { try { const { title, startTime, endTime } = args; const event = await prisma.event.create({ data: {
+        execute: async (args) => { try { const { title, startTime, endTime } = args; const event = await prisma.event.create({ data: { userId, 
               title,
               startTime: new Date(startTime),
               endTime: new Date(endTime),
@@ -264,7 +270,7 @@ BEHAVIOR RULES:
           category: z.string().describe('Category like Food, Transport, Utilities, etc.'),
           description: z.string().optional().describe('What was bought specifically'),
         }),
-        execute: async (args) => { try { const { amount, category, description } = args; const exp = await prisma.expense.create({ data: { amount, category, description, date: new Date() } }); return { success: true, message: `Expense of ₹${amount} (${category}) logged`, id: exp.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { amount, category, description } = args; const exp = await prisma.expense.create({ data: { userId,  amount, category, description, date: new Date() } }); return { success: true, message: `Expense of ₹${amount} (${category}) logged`, id: exp.id }; } catch(e: any) { return { success: false, error: e.message }; } },
       }),
       getTasks: tool({
         description: 'Get a list of the user\'s current tasks. Use this to observe the environment before deciding what to update or reschedule.',
@@ -287,7 +293,7 @@ BEHAVIOR RULES:
           status: z.string().optional().describe('New status: TODO, IN_PROGRESS, DONE'),
           dueDate: z.string().optional().describe('New ISO date string for due date'),
         }),
-        execute: async (args) => { try { const { id, status, dueDate } = args; const task = await prisma.task.update({ where: { id }, data: {
+        execute: async (args) => { try { const { id, status, dueDate } = args; const task = await prisma.task.update({ where: { userId,  id }, data: {
               ...(status && { status }),
               ...(dueDate && { dueDate: new Date(dueDate) }),
             } }); return { success: true, message: `Task '${task.title}' updated`, status: task.status, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: e.message }; } },
@@ -312,13 +318,13 @@ BEHAVIOR RULES:
           title: z.string().describe('The name of the habit'),
           frequency: z.string().describe('DAILY or WEEKLY'),
         }),
-        execute: async (args) => { try { const { title, frequency } = args; const habit = await prisma.habit.create({ data: { title, frequency } }); return { success: true, message: `Habit '${title}' created`, id: habit.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { title, frequency } = args; const habit = await prisma.habit.create({ data: { userId,  title, frequency } }); return { success: true, message: `Habit '${title}' created`, id: habit.id }; } catch(e: any) { return { success: false, error: e.message }; } },
       }),
       getHabits: tool({
         description: 'Get all habits.',
         parameters: z.object({}),
         execute: async () => {
-          const habits = await prisma.habit.findMany({ orderBy: { createdAt: 'desc' } });
+          const habits = await prisma.habit.findMany({ where: { userId },  orderBy: { createdAt: 'desc' } });
           return { success: true, habitsCount: habits.length, habits };
         },
       }),
@@ -329,13 +335,13 @@ BEHAVIOR RULES:
           description: z.string().optional().describe('Details about the goal'),
           targetDate: z.string().optional().describe('ISO date string for when the goal should be achieved'),
         }),
-        execute: async (args) => { try { const { title, description, targetDate } = args; const goal = await prisma.goal.create({ data: { title, description, targetDate: targetDate ? new Date(targetDate) : null } }); return { success: true, message: `Goal '${title}' created`, id: goal.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { title, description, targetDate } = args; const goal = await prisma.goal.create({ data: { userId,  title, description, targetDate: targetDate ? new Date(targetDate) : null } }); return { success: true, message: `Goal '${title}' created`, id: goal.id }; } catch(e: any) { return { success: false, error: e.message }; } },
       }),
       getGoals: tool({
         description: 'Get all goals to observe long-term objectives.',
         parameters: z.object({}),
         execute: async () => {
-          const goals = await prisma.goal.findMany({ orderBy: { createdAt: 'desc' } });
+          const goals = await prisma.goal.findMany({ where: { userId },  orderBy: { createdAt: 'desc' } });
           return { success: true, goalsCount: goals.length, goals };
         },
       })
@@ -345,14 +351,14 @@ BEHAVIOR RULES:
     async onFinish({ text }) {
       if (text) {
         await prisma.log.create({
-          data: {
+          data: { userId, 
             content: text,
             source: 'AI'
           }
         });
         try {
           await prisma.chatMessage.create({
-            data: {
+            data: { userId, 
               role: 'assistant',
               content: text,
               source: currentPath,

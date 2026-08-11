@@ -1,9 +1,14 @@
+import { authOptions } from "@/lib/auth";
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth'; // assuming next-auth is used
 
 export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   try {
-    const messages = await prisma.chatMessage.findMany({
+    const messages = await prisma.chatMessage.findMany({ where: { userId }, 
       orderBy: { createdAt: 'desc' },
       take: 50,
     });

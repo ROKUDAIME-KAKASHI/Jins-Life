@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Activity } from "lucide-react";
@@ -18,7 +20,7 @@ async function addHealth(formData: FormData) {
 }
 
 export default async function HealthPage() {
- const items = await prisma.healthMetric.findMany({
+ const items = await prisma.healthMetric.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

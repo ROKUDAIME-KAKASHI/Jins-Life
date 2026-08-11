@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { BarChart } from "lucide-react";
@@ -17,7 +19,7 @@ async function addReviews(formData: FormData) {
 }
 
 export default async function ReviewsPage() {
- const items = await prisma.review.findMany({
+ const items = await prisma.review.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

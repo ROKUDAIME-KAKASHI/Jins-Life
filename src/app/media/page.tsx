@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Library } from "lucide-react";
@@ -18,7 +20,7 @@ async function addMedia(formData: FormData) {
 }
 
 export default async function MediaPage() {
- const items = await prisma.mediaItem.findMany({
+ const items = await prisma.mediaItem.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

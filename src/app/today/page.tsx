@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckSquare, Calendar, Repeat, Sparkles } from "lucide-react";
@@ -15,13 +17,13 @@ export default async function TodayPage() {
   endOfDay.setHours(23, 59, 59, 999);
 
   const todayEvents = await prisma.event.findMany({
-    where: { startTime: { gte: startOfDay, lte: endOfDay } },
+    where: { userId,  startTime: { gte: startOfDay, lte: endOfDay } },
     orderBy: { startTime: 'asc' }
   });
 
-  const routines = await prisma.routine.findMany({ include: { steps: true } });
+  const routines = await prisma.routine.findMany({ where: { userId },  include: { steps: true } });
   const tasks = await prisma.task.findMany({ 
-    where: { status: "TODO" },
+    where: { userId,  status: "TODO" },
     take: 5
   });
 
@@ -29,12 +31,12 @@ export default async function TodayPage() {
     where: { date: startOfDay }
   });
 
-  const recentExpenses = await prisma.expense.findMany({
+  const recentExpenses = await prisma.expense.findMany({ where: { userId }, 
     orderBy: { date: 'desc' },
     take: 4
   });
 
-  const habits = await prisma.habit.findMany({
+  const habits = await prisma.habit.findMany({ where: { userId }, 
     take: 4
   });
 

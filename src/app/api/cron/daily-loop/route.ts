@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 // @ts-nocheck
 import { generateText, tool } from 'ai';
 import { google } from '@ai-sdk/google';
@@ -7,6 +9,10 @@ import { NextResponse } from 'next/server';
 
 // This endpoint can be triggered by a cron job (e.g., every morning at 6 AM)
 export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   const authHeader = req.headers.get('authorization');
   
   // Example hardcoded credentials for the cron job: username "cron", password "loop-engine"
@@ -66,7 +72,7 @@ export async function GET(req: Request) {
         execute: async (args) => {
           const { id, dueDate } = args;
           const task = await prisma.task.update({
-            where: { id },
+            where: { userId,  id },
             data: {
               ...(dueDate && { dueDate: new Date(dueDate) }),
             }
@@ -82,7 +88,7 @@ export async function GET(req: Request) {
         execute: async (args) => {
           const { content } = args;
           const insight = await prisma.proactiveInsight.create({
-            data: {
+            data: { userId, 
               content,
               date: new Date(),
             }

@@ -22,6 +22,9 @@ model Project {
   tasks       Task[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Task {
@@ -36,6 +39,9 @@ model Task {
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Note {
@@ -45,6 +51,9 @@ model Note {
   tags      String   // Stored as a comma-separated string
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Goal {
@@ -55,6 +64,9 @@ model Goal {
   status      String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, ACHIEVED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Habit {
@@ -65,6 +77,9 @@ model Habit {
   lastCompleted DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -75,6 +90,9 @@ model Expense {
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Journal {
@@ -84,6 +102,9 @@ model Journal {
   date      DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Event {
@@ -95,6 +116,9 @@ model Event {
   isAllDay    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Contact {
@@ -107,6 +131,9 @@ model Contact {
   lastContact DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model HealthMetric {
@@ -118,6 +145,9 @@ model HealthMetric {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model MediaItem {
@@ -130,6 +160,9 @@ model MediaItem {
   url         String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model FocusSession {
@@ -139,6 +172,9 @@ model FocusSession {
   startTime   DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Routine {
@@ -148,6 +184,9 @@ model Routine {
   steps       RoutineStep[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RoutineStep {
@@ -170,6 +209,9 @@ model Review {
   date      DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Trip {
@@ -180,6 +222,9 @@ model Trip {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
@@ -191,6 +236,9 @@ model Subscription {
   url         String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model InventoryItem {
@@ -202,6 +250,9 @@ model InventoryItem {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ProactiveInsight {
@@ -210,6 +261,9 @@ model ProactiveInsight {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -217,6 +271,26 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  projects Project[]
+  tasks Task[]
+  notes Note[]
+  goals Goal[]
+  habits Habit[]
+  expenses Expense[]
+  journals Journal[]
+  events Event[]
+  contacts Contact[]
+  healthMetrics HealthMetric[]
+  mediaItems MediaItem[]
+  focusSessions FocusSession[]
+  routines Routine[]
+  reviews Review[]
+  trips Trip[]
+  subscriptions Subscription[]
+  inventoryItems InventoryItem[]
+  proactiveInsights ProactiveInsight[]
+  logs Log[]
+  chatMessages ChatMessage[]
 }
 
 model Log {
@@ -225,6 +299,9 @@ model Log {
   source    String   @default("USER") // USER, AI
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ChatMessage {
@@ -239,5 +316,8 @@ model ChatMessage {
 
   @@index([source])
   @@index([createdAt])
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

@@ -1,4 +1,6 @@
-"use server"
+"use server";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
@@ -6,6 +8,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function generateDailyInsight() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -21,9 +27,9 @@ export async function generateDailyInsight() {
   endOfDay.setHours(23, 59, 59, 999);
 
   const [tasks, events, habits] = await Promise.all([
-    prisma.task.findMany({ where: { status: "TODO" }, take: 10 }),
-    prisma.event.findMany({ where: { startTime: { gte: today, lte: endOfDay } } }),
-    prisma.habit.findMany({ take: 5 }),
+    prisma.task.findMany({ where: { userId,  status: "TODO" }, take: 10 }),
+    prisma.event.findMany({ where: { userId,  startTime: { gte: today, lte: endOfDay } } }),
+    prisma.habit.findMany({ where: { userId },  take: 5 }),
   ]);
 
   const prompt = `
@@ -43,7 +49,7 @@ export async function generateDailyInsight() {
     });
 
     const insight = await prisma.proactiveInsight.create({
-      data: {
+      data: { userId, 
         date: today,
         content: text,
       }

@@ -1,8 +1,10 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { CalendarClient } from "./CalendarClient";
 
 export default async function CalendarPage() {
- const events = await prisma.event.findMany({
+ const events = await prisma.event.findMany({ where: { userId }, 
  orderBy: { startTime: 'asc' },
  });
 

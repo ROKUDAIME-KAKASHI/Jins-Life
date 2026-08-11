@@ -1,10 +1,12 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { TaskList } from "./TaskList";
 import { revalidatePath } from "next/cache";
 
 export default async function TasksPage() {
- const tasks = await prisma.task.findMany({
+ const tasks = await prisma.task.findMany({ where: { userId }, 
  orderBy: [
  { status: 'asc' }, // TODO before DONE
  { createdAt: 'desc' } // Newest first

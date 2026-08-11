@@ -12,13 +12,14 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) throw new Error("Missing credentials");
 
-        // Check if any users exist in the DB
-        const userCount = await prisma.user.count();
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        });
 
-        // If no users exist, the FIRST login automatically creates the owner account.
-        if (userCount === 0) {
+        if (!user) {
+          // Auto-register new user
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
           const newUser = await prisma.user.create({
             data: {
@@ -29,21 +30,21 @@ export const authOptions: AuthOptions = {
           return { id: newUser.id, email: newUser.email };
         }
 
-        // Normal Login
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
-
-        if (!user) return null;
-
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isPasswordValid) return null;
+        if (!isPasswordValid) throw new Error("Invalid password");
 
         return { id: user.id, email: user.email };
       }
     })
   ],
+  callbacks: {
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        (session.user as any).id = token.sub; // Inject user ID into session
+      }
+      return session;
+    }
+  },
   session: { strategy: "jwt" },
   pages: {
     signIn: '/login',

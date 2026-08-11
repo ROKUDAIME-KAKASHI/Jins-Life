@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { FileText } from "lucide-react";
@@ -19,7 +21,7 @@ async function addNotes(formData: FormData) {
 }
 
 export default async function NotesPage() {
- const items = await prisma.note.findMany({
+ const items = await prisma.note.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

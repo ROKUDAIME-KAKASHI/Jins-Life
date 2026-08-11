@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { FolderKanban } from "lucide-react";
@@ -17,7 +19,7 @@ async function addProjects(formData: FormData) {
 }
 
 export default async function ProjectsPage() {
- const items = await prisma.project.findMany({
+ const items = await prisma.project.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

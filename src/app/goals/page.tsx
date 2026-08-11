@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Target, Flag } from "lucide-react";
@@ -11,7 +13,7 @@ async function addGoal(formData: FormData) {
  const targetDateStr = formData.get("targetDate") as string;
  if (!title) return;
  await prisma.goal.create({ 
- data: { 
+ data: { userId,  
  title, 
  description,
  targetDate: targetDateStr ? new Date(targetDateStr) : null,
@@ -22,7 +24,7 @@ async function addGoal(formData: FormData) {
 }
 
 export default async function GoalsPage() {
- const goals = await prisma.goal.findMany({
+ const goals = await prisma.goal.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { DollarSign, IndianRupee, PieChart } from "lucide-react";
@@ -15,7 +17,7 @@ async function addExpense(formData: FormData) {
  if (isNaN(amount)) return;
 
  await prisma.expense.create({ 
- data: { 
+ data: { userId,  
  amount, 
  category, 
  description 
@@ -25,7 +27,7 @@ async function addExpense(formData: FormData) {
 }
 
 export default async function FinancesPage() {
- const expenses = await prisma.expense.findMany({
+ const expenses = await prisma.expense.findMany({ where: { userId }, 
  orderBy: { date: 'desc' },
  });
 

@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Repeat, CheckCircle } from "lucide-react";
@@ -9,12 +11,12 @@ async function addHabit(formData: FormData) {
  const title = formData.get("title") as string;
  const frequency = formData.get("frequency") as string;
  if (!title) return;
- await prisma.habit.create({ data: { title, frequency, streak: 0 } });
+ await prisma.habit.create({ data: { userId,  title, frequency, streak: 0 } });
  revalidatePath("/habits");
 }
 
 export default async function HabitsPage() {
- const habits = await prisma.habit.findMany({
+ const habits = await prisma.habit.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

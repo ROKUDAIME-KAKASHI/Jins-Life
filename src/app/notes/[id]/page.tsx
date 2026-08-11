@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Tag } from "lucide-react";

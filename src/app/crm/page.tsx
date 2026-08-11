@@ -1,3 +1,5 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { Users } from "lucide-react";
@@ -18,7 +20,7 @@ async function addCRM(formData: FormData) {
 }
 
 export default async function CRMPage() {
- const items = await prisma.contact.findMany({
+ const items = await prisma.contact.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
 

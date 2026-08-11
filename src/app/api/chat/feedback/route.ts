@@ -1,7 +1,13 @@
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return new Response("Unauthorized", { status: 401 });
+  const userId = session.user.id;
+
   try {
     const { messageId, rating, feedback } = await req.json();
 
@@ -11,14 +17,14 @@ export async function POST(req: Request) {
 
     if (messageId) {
       await prisma.chatMessage.update({
-        where: { id: messageId },
+        where: { userId,  id: messageId },
         data: { rating, feedback: feedback || null },
       });
     }
 
     // Also log user feedback for overall system audit
     await prisma.log.create({
-      data: {
+      data: { userId, 
         content: `User rating: ${rating === 1 ? '👍 Positive' : '👎 Negative'}${feedback ? ` - Feedback: "${feedback}"` : ''}`,
         source: 'USER_FEEDBACK',
       },
