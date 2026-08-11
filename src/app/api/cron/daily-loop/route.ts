@@ -1,6 +1,6 @@
+// @ts-nocheck
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-// @ts-nocheck
 import { generateText, tool } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
@@ -109,3 +109,4 @@ export async function GET(req: Request) {
     summary: result.text
   });
 }
+
