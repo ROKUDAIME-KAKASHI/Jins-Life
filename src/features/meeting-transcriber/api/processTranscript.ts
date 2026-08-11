@@ -1,5 +1,5 @@
 import { streamText } from "ai";
-import { mistral } from "@ai-sdk/mistral";
+import { google } from "@ai-sdk/google";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -49,7 +49,7 @@ Your job is to generate a professional Meeting Document with the following struc
     }
 
     const result = await streamText({
-      model: mistral('mistral-small-latest'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       prompt: `Here is the raw diarized transcript from Deepgram:\n\n${prompt}`,
     });
