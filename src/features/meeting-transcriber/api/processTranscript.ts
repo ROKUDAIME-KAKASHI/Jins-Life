@@ -49,9 +49,11 @@ Your job is to generate a professional Meeting Document with the following struc
     }
 
     const result = await streamText({
-      model: mistral('mistral-large-latest'),
+      model: mistral('mistral-small-latest'),
       system: systemPrompt,
       prompt: `Here is the raw diarized transcript from Deepgram:\n\n${prompt}`,
+      maxTokens: 4000,
+      temperature: 0.3,
     });
 
     return result.toTextStreamResponse();
