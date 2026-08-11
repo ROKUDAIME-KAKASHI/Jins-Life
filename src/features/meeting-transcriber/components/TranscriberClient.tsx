@@ -100,6 +100,30 @@ export function TranscriberClient() {
     html2pdf().set(opt as any).from(element).save();
   };
 
+  const handleExportTxt = (content: string, type: string) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${type}-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportWordHTML = (elementId: string, fallbackContent: string, type: string) => {
+    const element = document.getElementById(elementId);
+    const htmlContent = element ? element.innerHTML : fallbackContent.replace(/\n/g, '<br>');
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export</title></head><body>";
+    const footer = "</body></html>";
+    const sourceHTML = header + htmlContent + footer;
+    
+    const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+    const a = document.createElement("a");
+    a.href = source;
+    a.download = `${type}-${new Date().toISOString().slice(0,10)}.doc`;
+    a.click();
+  };
+
   const openSavedNotes = async () => {
     setShowSavedNotes(true);
     setIsLoadingNotes(true);
@@ -193,9 +217,17 @@ export function TranscriberClient() {
                </span>
              </div>
              {!isLoading && (
-               <Button onClick={handleExportPDF} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-                 <Download className="w-4 h-4" /> Export PDF
-               </Button>
+               <div className="flex gap-2">
+                 <Button onClick={() => handleExportTxt(completion, template)} size="sm" variant="outline" className="bg-white hover:bg-gray-100 text-indigo-900 gap-2 border-indigo-200">
+                   <Download className="w-4 h-4" /> TXT
+                 </Button>
+                 <Button onClick={() => handleExportWordHTML('generated-doc', completion, template)} size="sm" variant="outline" className="bg-white hover:bg-gray-100 text-indigo-900 gap-2 border-indigo-200">
+                   <Download className="w-4 h-4" /> Word
+                 </Button>
+                 <Button onClick={handleExportPDF} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 border-none">
+                   <Download className="w-4 h-4" /> PDF
+                 </Button>
+               </div>
              )}
           </div>
           <div id="generated-doc" className="p-6 overflow-y-auto prose prose-indigo max-w-none bg-white dark:bg-transparent">
@@ -237,28 +269,40 @@ export function TranscriberClient() {
         </div>
         
         {transcriptParts.length > 0 && !isRecording && (
-          <div className="p-4 border-t border-border bg-black/5 dark:bg-black/20 flex flex-wrap items-center justify-end gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Template:</span>
-              <select
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                disabled={isLoading || isSaving}
-                className="bg-background border border-border rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                <option value="MOM">Minutes of Meeting</option>
-                <option value="Report">Report</option>
-              </select>
-            </div>
+          <div className="p-4 border-t border-border bg-black/5 dark:bg-black/20 flex flex-wrap items-center justify-between gap-4">
             
-            <button
-              onClick={processAndSaveNote}
-              disabled={isLoading || isSaving}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm disabled:opacity-50 transition-colors"
-            >
-              {(isLoading || isSaving) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {isLoading ? 'Generating...' : isSaving ? 'Saving...' : 'Process with Mistral & Save'}
-            </button>
+            <div className="flex items-center gap-2">
+               <Button onClick={() => handleExportTxt(getFullRawTranscript(), 'Raw-Transcript')} size="sm" variant="outline" className="gap-2 rounded-xl">
+                 <Download className="w-4 h-4" /> TXT Transcript
+               </Button>
+               <Button onClick={() => handleExportWordHTML('non-existent', getFullRawTranscript(), 'Raw-Transcript')} size="sm" variant="outline" className="gap-2 rounded-xl">
+                 <Download className="w-4 h-4" /> Word Transcript
+               </Button>
+            </div>
+
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Template:</span>
+                <select
+                  value={template}
+                  onChange={(e) => setTemplate(e.target.value)}
+                  disabled={isLoading || isSaving}
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                >
+                  <option value="MOM">Minutes of Meeting</option>
+                  <option value="Report">Report</option>
+                </select>
+              </div>
+            
+              <button
+                onClick={processAndSaveNote}
+                disabled={isLoading || isSaving}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm disabled:opacity-50 transition-colors"
+              >
+                {(isLoading || isSaving) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                {isLoading ? 'Generating...' : isSaving ? 'Saving...' : 'Process with Mistral & Save'}
+              </button>
+            </div>
           </div>
         )}
       </Card>
