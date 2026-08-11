@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -48,13 +48,16 @@ Your job is to generate a professional Meeting Document with the following struc
 (Provide the fully cleaned transcript. Fix obvious typos and add perfect punctuation. Keep the "Speaker X" tags perfectly intact. Do not change the original meaning.)`;
     }
 
-    const result = await streamText({
+    const result = await generateText({
       model: google('gemini-1.5-flash'),
       system: systemPrompt,
       prompt: `Here is the raw diarized transcript from Deepgram:\n\n${prompt}`,
     });
 
-    return result.toDataStreamResponse();
+    return new Response(JSON.stringify({ text: result.text }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   } catch (error: any) {
     console.error("Error in processTranscript:", error);
     return new Response(JSON.stringify({ error: error.message || "Unknown error occurred" }), { 

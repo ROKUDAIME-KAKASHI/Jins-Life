@@ -32,16 +32,11 @@ export function TranscriberClient() {
   const [savedNotes, setSavedNotes] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
+  
+  const [completion, setCompletion] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
   const router = useRouter();
-
-  const { completion, complete, isLoading } = useCompletion({
-    api: "/api/meetings/process",
-    onError: (err) => {
-      console.error("Completion Error:", err);
-      setUiError(`Mistral Error: ${err.message}`);
-      alert(`Mistral Error: ${err.message}`);
-    }
-  });
 
   const formatTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600);
@@ -59,13 +54,26 @@ export function TranscriberClient() {
 
   const processAndSaveNote = async () => {
     setUiError(null);
+    setCompletion("");
     const fullTranscript = getFullRawTranscript();
     if (!fullTranscript.trim()) return;
     
+    setIsLoading(true);
     try {
-      const generatedDoc = await complete(fullTranscript, {
-        body: { template }
+      const response = await fetch("/api/meetings/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: fullTranscript, template })
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Unknown API error");
+      }
+      
+      const generatedDoc = data.text;
+      setCompletion(generatedDoc);
       
       if (generatedDoc) {
         setIsSaving(true);
@@ -96,14 +104,15 @@ export function TranscriberClient() {
           setIsSaving(false);
         }
       } else {
-        // If generatedDoc is falsy and it didn't throw, Mistral returned nothing.
         if (!uiError) {
-          setUiError("Mistral returned an empty response. Please check your API key or limits.");
+          setUiError("The AI returned an empty response. Please check your API key or limits.");
         }
       }
     } catch (err: any) {
       console.error("Process failed:", err);
       setUiError(`Process failed: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
