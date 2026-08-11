@@ -67,10 +67,20 @@ export function TranscriberClient() {
       if (generatedDoc) {
         setIsSaving(true);
         try {
-          const result = await saveFinalTranscript(generatedDoc, template);
+          // Sometimes Mistral wraps the entire output in ```markdown ... ```
+          let finalDoc = generatedDoc;
+          if (finalDoc.startsWith("```markdown\n")) {
+            finalDoc = finalDoc.substring(12);
+            if (finalDoc.endsWith("```")) finalDoc = finalDoc.slice(0, -3);
+          } else if (finalDoc.startsWith("```\n")) {
+            finalDoc = finalDoc.substring(4);
+            if (finalDoc.endsWith("```")) finalDoc = finalDoc.slice(0, -3);
+          }
+
+          const result = await saveFinalTranscript(finalDoc, template);
           if (result.success) {
             resetRecording();
-            alert("Saved successfully to your notes!");
+            router.push(`/notes`); // Immediately redirect to Notes so the user SEES it
           } else {
             alert(`Failed to save transcript: ${result.error}`);
           }
