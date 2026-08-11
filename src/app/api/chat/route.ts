@@ -115,7 +115,7 @@ BEHAVIOR RULES:
             const { title, content, tags } = args;
             const note = await prisma.note.create({ data: { userId,  title, content, tags: tags || '' } });
             return { success: true, message: `Note '${note.title}' created successfully`, id: note.id };
-          } catch(e: any) { return { success: false, error: e.message }; }
+          } catch(e: any) { return { success: false, error: String(e.message) }; }
         },
       }),
       createJournalEntry: tool({
@@ -129,7 +129,7 @@ BEHAVIOR RULES:
             const { entry, mood } = args;
             const journal = await prisma.journal.create({ data: { userId,  entry, mood: mood || '' } });
             return { success: true, message: 'Journal entry logged', id: journal.id, mood: journal.mood };
-          } catch(e: any) { return { success: false, error: e.message }; }
+          } catch(e: any) { return { success: false, error: String(e.message) }; }
         },
       }),
       logHealthMetric: tool({
@@ -144,7 +144,7 @@ BEHAVIOR RULES:
             const { type, value, unit } = args;
             const metric = await prisma.healthMetric.create({ data: { userId,  type, value, unit } });
             return { success: true, message: `Health metric ${type} (${value} ${unit}) logged`, id: metric.id };
-          } catch(e: any) { return { success: false, error: e.message }; }
+          } catch(e: any) { return { success: false, error: String(e.message) }; }
         },
       }),
       addMediaItem: tool({
@@ -159,7 +159,7 @@ BEHAVIOR RULES:
             const { title, type, status } = args;
             const media = await prisma.mediaItem.create({ data: { userId,  title, type, status } });
             return { success: true, message: `Added ${type}: ${title}`, id: media.id };
-          } catch(e: any) { return { success: false, error: e.message }; }
+          } catch(e: any) { return { success: false, error: String(e.message) }; }
         },
       }),
       addSubscription: tool({
@@ -174,7 +174,7 @@ BEHAVIOR RULES:
             const { name, cost, cycle } = args;
             const sub = await prisma.subscription.create({ data: { userId,  name, cost, cycle } });
             return { success: true, message: `Subscription ${name} (₹${cost}/${cycle}) added`, id: sub.id };
-          } catch(e: any) { return { success: false, error: e.message }; }
+          } catch(e: any) { return { success: false, error: String(e.message) }; }
         },
       }),
 
@@ -186,7 +186,7 @@ BEHAVIOR RULES:
           email: z.string().optional(),
           notes: z.string().optional(),
         }),
-        execute: async (args) => { try { const { name, email, notes } = args; const item = await prisma.contact.create({ data: { userId,  name, email: email || '', notes: notes || '' } }); return { success: true, message: `Contact ${name} created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { name, email, notes } = args; const item = await prisma.contact.create({ data: { userId,  name, email: email || '', notes: notes || '' } }); return { success: true, message: `Contact ${name} created`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createInventoryItem: tool({
         description: 'Add an item to the physical inventory/archive',
@@ -195,7 +195,7 @@ BEHAVIOR RULES:
           category: z.string(),
           value: z.number().optional().describe('Estimated value in Rupees'),
         }),
-        execute: async (args) => { try { const { name, category, value } = args; const item = await prisma.inventoryItem.create({ data: { userId,  name, category, value: value || 0 } }); return { success: true, message: `Inventory item '${name}' added`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { name, category, value } = args; const item = await prisma.inventoryItem.create({ data: { userId,  name, category, value: value || 0 } }); return { success: true, message: `Inventory item '${name}' added`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createProject: tool({
         description: 'Create a new project',
@@ -203,7 +203,7 @@ BEHAVIOR RULES:
           title: z.string(),
           description: z.string().optional(),
         }),
-        execute: async (args) => { try { const { title, description } = args; const item = await prisma.project.create({ data: { userId,  title, description: description || '' } }); return { success: true, message: `Project '${title}' created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { title, description } = args; const item = await prisma.project.create({ data: { userId,  title, description: description || '' } }); return { success: true, message: `Project '${title}' created`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createTrip: tool({
         description: 'Plan a new trip or travel',
@@ -212,7 +212,7 @@ BEHAVIOR RULES:
           startDate: z.string().describe('ISO date'),
           endDate: z.string().describe('ISO date'),
         }),
-        execute: async (args) => { try { const { destination, startDate, endDate } = args; const item = await prisma.trip.create({ data: { userId,  destination, startDate: new Date(startDate), endDate: new Date(endDate) } }); return { success: true, message: `Trip to ${destination} scheduled`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { destination, startDate, endDate } = args; const item = await prisma.trip.create({ data: { userId,  destination, startDate: new Date(startDate), endDate: new Date(endDate) } }); return { success: true, message: `Trip to ${destination} scheduled`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createReview: tool({
         description: 'Log a weekly or monthly life review',
@@ -220,7 +220,7 @@ BEHAVIOR RULES:
           type: z.string().describe('WEEKLY or MONTHLY'),
           summary: z.string(),
         }),
-        execute: async (args) => { try { const { type, summary } = args; const item = await prisma.review.create({ data: { userId,  type, summary } }); return { success: true, message: `${type} review logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { type, summary } = args; const item = await prisma.review.create({ data: { userId,  type, summary } }); return { success: true, message: `${type} review logged`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createRoutine: tool({
         description: 'Add a new daily/weekly routine',
@@ -228,7 +228,7 @@ BEHAVIOR RULES:
           title: z.string(),
           timeOfDay: z.string().describe('MORNING, EVENING, or ANYTIME'),
         }),
-        execute: async (args) => { try { const { title, timeOfDay } = args; const item = await prisma.routine.create({ data: { userId,  title, timeOfDay } }); return { success: true, message: `Routine '${title}' (${timeOfDay}) created`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { title, timeOfDay } = args; const item = await prisma.routine.create({ data: { userId,  title, timeOfDay } }); return { success: true, message: `Routine '${title}' (${timeOfDay}) created`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
       createFocusSession: tool({
         description: 'Log a focus/deep-work session',
@@ -236,7 +236,7 @@ BEHAVIOR RULES:
           duration: z.number().describe('Duration in minutes'),
           task: z.string().optional(),
         }),
-        execute: async (args) => { try { const { duration, task } = args; const item = await prisma.focusSession.create({ data: { userId,  duration, task: task || '' } }); return { success: true, message: `${duration} minute focus session logged`, id: item.id }; } catch(e: any) { return { success: false, error: e.message }; } }
+        execute: async (args) => { try { const { duration, task } = args; const item = await prisma.focusSession.create({ data: { userId,  duration, task: task || '' } }); return { success: true, message: `${duration} minute focus session logged`, id: item.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } }
       }),
 
       createTask: tool({
@@ -248,7 +248,7 @@ BEHAVIOR RULES:
         execute: async (args) => { try { const { title, dueDate } = args; const task = await prisma.task.create({ data: { userId, 
               title,
               dueDate: dueDate ? new Date(dueDate) : null,
-            } }); return { success: true, message: `Task '${title}' created successfully`, id: task.id, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: e.message }; } },
+            } }); return { success: true, message: `Task '${title}' created successfully`, id: task.id, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       createEvent: tool({
         description: 'Schedule a new calendar event',
@@ -261,7 +261,7 @@ BEHAVIOR RULES:
               title,
               startTime: new Date(startTime),
               endTime: new Date(endTime),
-            } }); return { success: true, message: `Event '${title}' scheduled`, id: event.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+            } }); return { success: true, message: `Event '${title}' scheduled`, id: event.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       logExpense: tool({
         description: 'Log a new financial expense',
@@ -270,7 +270,7 @@ BEHAVIOR RULES:
           category: z.string().describe('Category like Food, Transport, Utilities, etc.'),
           description: z.string().optional().describe('What was bought specifically'),
         }),
-        execute: async (args) => { try { const { amount, category, description } = args; const exp = await prisma.expense.create({ data: { userId,  amount, category, description, date: new Date() } }); return { success: true, message: `Expense of ₹${amount} (${category}) logged`, id: exp.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { amount, category, description } = args; const exp = await prisma.expense.create({ data: { userId,  amount, category, description, date: new Date() } }); return { success: true, message: `Expense of ₹${amount} (${category}) logged`, id: exp.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       getTasks: tool({
         description: 'Get a list of the user\'s current tasks. Use this to observe the environment before deciding what to update or reschedule.',
@@ -296,7 +296,7 @@ BEHAVIOR RULES:
         execute: async (args) => { try { const { id, status, dueDate } = args; const task = await prisma.task.update({ where: { userId,  id }, data: {
               ...(status && { status }),
               ...(dueDate && { dueDate: new Date(dueDate) }),
-            } }); return { success: true, message: `Task '${task.title}' updated`, status: task.status, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: e.message }; } },
+            } }); return { success: true, message: `Task '${task.title}' updated`, status: task.status, dueDate: task.dueDate }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       getEvents: tool({
         description: 'Get a list of calendar events to observe the user\'s schedule.',
@@ -318,7 +318,7 @@ BEHAVIOR RULES:
           title: z.string().describe('The name of the habit'),
           frequency: z.string().describe('DAILY or WEEKLY'),
         }),
-        execute: async (args) => { try { const { title, frequency } = args; const habit = await prisma.habit.create({ data: { userId,  title, frequency } }); return { success: true, message: `Habit '${title}' created`, id: habit.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { title, frequency } = args; const habit = await prisma.habit.create({ data: { userId,  title, frequency } }); return { success: true, message: `Habit '${title}' created`, id: habit.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       getHabits: tool({
         description: 'Get all habits.',
@@ -335,7 +335,7 @@ BEHAVIOR RULES:
           description: z.string().optional().describe('Details about the goal'),
           targetDate: z.string().optional().describe('ISO date string for when the goal should be achieved'),
         }),
-        execute: async (args) => { try { const { title, description, targetDate } = args; const goal = await prisma.goal.create({ data: { userId,  title, description, targetDate: targetDate ? new Date(targetDate) : null } }); return { success: true, message: `Goal '${title}' created`, id: goal.id }; } catch(e: any) { return { success: false, error: e.message }; } },
+        execute: async (args) => { try { const { title, description, targetDate } = args; const goal = await prisma.goal.create({ data: { userId,  title, description, targetDate: targetDate ? new Date(targetDate) : null } }); return { success: true, message: `Goal '${title}' created`, id: goal.id }; } catch(e: any) { return { success: false, error: String(e.message) }; } },
       }),
       getGoals: tool({
         description: 'Get all goals to observe long-term objectives.',
