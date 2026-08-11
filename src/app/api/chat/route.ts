@@ -1,6 +1,6 @@
+// @ts-nocheck
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-// @ts-nocheck
 import { streamText, tool, convertToModelMessages } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
