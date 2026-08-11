@@ -37,6 +37,28 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null); // For iOS persistent audio
 
+  // Load saved transcript on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lifeos_active_transcript');
+      if (saved) {
+        setTranscriptParts(JSON.parse(saved));
+      }
+      const savedSeconds = localStorage.getItem('lifeos_active_seconds');
+      if (savedSeconds) {
+        setRecordingSeconds(parseInt(savedSeconds, 10));
+      }
+    } catch (e) {}
+  }, []);
+
+  // Save transcript and seconds on change
+  useEffect(() => {
+    if (transcriptParts.length > 0) {
+      localStorage.setItem('lifeos_active_transcript', JSON.stringify(transcriptParts));
+      localStorage.setItem('lifeos_active_seconds', recordingSeconds.toString());
+    }
+  }, [transcriptParts, recordingSeconds]);
+
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -71,6 +93,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     setInterimText("");
     setRecordingSeconds(0);
     setStatusMsg("Ready");
+    localStorage.removeItem('lifeos_active_transcript');
+    localStorage.removeItem('lifeos_active_seconds');
   };
 
   const toggleRecording = async () => {
