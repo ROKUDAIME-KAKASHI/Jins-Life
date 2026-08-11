@@ -32,7 +32,7 @@ export default async function TodayPage() {
   });
 
   const insight = await prisma.proactiveInsight.findUnique({
-    where: { date: startOfDay }
+    where: { date_userId: { date: startOfDay, userId } }
   });
 
   const recentExpenses = await prisma.expense.findMany({ where: { userId }, 

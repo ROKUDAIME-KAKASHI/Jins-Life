@@ -18,7 +18,7 @@ export default async function NoteViewPage({ params }: { params: Promise<{ id: s
  where: { id: resolvedParams.id }
  });
 
- if (!note) {
+ if (!note || note.userId !== userId) {
  notFound();
  }
 
