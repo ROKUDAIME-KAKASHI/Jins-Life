@@ -16,7 +16,7 @@ export async function generateDailyInsight() {
   today.setHours(0, 0, 0, 0);
 
   const existing = await prisma.proactiveInsight.findUnique({
-    where: { date: today }
+    where: { date_userId: { date: today, userId } }
   });
 
   if (existing) {

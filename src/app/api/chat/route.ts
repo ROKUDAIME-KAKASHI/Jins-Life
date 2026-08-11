@@ -280,7 +280,10 @@ BEHAVIOR RULES:
         execute: async (args) => {
           const { status } = args;
           const tasks = await prisma.task.findMany({
-            where: status ? { status } : undefined,
+            where: {
+              userId,
+              ...(status ? { status } : {})
+            },
             orderBy: { dueDate: 'asc' },
           });
           return { success: true, tasksCount: tasks.length, tasks };
@@ -306,7 +309,10 @@ BEHAVIOR RULES:
         execute: async (args) => {
           const { upcomingOnly } = args;
           const events = await prisma.event.findMany({
-            where: upcomingOnly ? { startTime: { gte: new Date() } } : undefined,
+            where: {
+              userId,
+              ...(upcomingOnly ? { startTime: { gte: new Date() } } : {})
+            },
             orderBy: { startTime: 'asc' },
           });
           return { success: true, eventsCount: events.length, events };
