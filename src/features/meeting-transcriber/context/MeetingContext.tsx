@@ -214,8 +214,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           }
         };
 
-        socket.onclose = () => {
-          setStatusMsg("Connection closed.");
+        socket.onclose = (event) => {
+          setStatusMsg(`Connection closed (Code: ${event.code}, Reason: ${event.reason || 'None'})`);
           setIsRecording(false);
         };
 
