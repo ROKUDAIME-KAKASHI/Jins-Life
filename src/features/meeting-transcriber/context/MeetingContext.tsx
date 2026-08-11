@@ -116,12 +116,18 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         const ac = new AudioContext();
         audioContextRef.current = ac;
         
+        const mixer = ac.createGain();
+        mixer.gain.value = 1;
+        
         const source = ac.createMediaStreamSource(stream);
+        source.connect(mixer);
+        
         let sysSource: MediaStreamAudioSourceNode | null = null;
         
         if (sysStream && sysStream.getAudioTracks().length > 0) {
           const sysAudioStream = new MediaStream(sysStream.getAudioTracks());
           sysSource = ac.createMediaStreamSource(sysAudioStream);
+          sysSource.connect(mixer);
         }
 
         const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
@@ -150,17 +156,24 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           // CRITICAL: Anchor the processor to window so Chrome doesn't kill it after 10s
           (window as any).__sharedAudioProcessor = processor;
           
-          source.connect(processor);
-          if (sysSource) sysSource.connect(processor);
-          
+          mixer.connect(processor);
           processor.connect(ac.destination);
           
           processor.onaudioprocess = (e) => {
+            // CRITICAL: Mute output to prevent system audio echoing back to speakers!
+            if (e.outputBuffer) {
+              for (let c = 0; c < e.outputBuffer.numberOfChannels; c++) {
+                e.outputBuffer.getChannelData(c).fill(0);
+              }
+            }
+
             if (socket.readyState === WebSocket.OPEN) {
               const inputData = e.inputBuffer.getChannelData(0);
               const int16Data = new Int16Array(inputData.length);
               for (let i = 0; i < inputData.length; i++) {
-                const s = Math.max(-1, Math.min(1, inputData[i]));
+                let s = inputData[i];
+                if (isNaN(s)) s = 0;
+                s = Math.max(-1, Math.min(1, s));
                 int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
               }
               socket.send(int16Data.buffer);
