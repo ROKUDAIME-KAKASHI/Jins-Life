@@ -6,8 +6,10 @@ import { Mic, Square, Save, Loader2, Volume2, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMeeting } from "../context/MeetingContext";
 import { useCompletion } from "@ai-sdk/react";
-import { saveFinalTranscript } from "../server/actions";
+import { saveFinalTranscript, getSavedTranscripts } from "../server/actions";
 import Markdown from "react-markdown";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export function TranscriberClient() {
   const {
@@ -24,6 +26,9 @@ export function TranscriberClient() {
 
   const [template, setTemplate] = useState("MOM");
   const [isSaving, setIsSaving] = useState(false);
+  const [showSavedNotes, setShowSavedNotes] = useState(false);
+  const [savedNotes, setSavedNotes] = useState<any[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const router = useRouter();
 
   const { completion, complete, isLoading } = useCompletion({
@@ -56,10 +61,10 @@ export function TranscriberClient() {
     if (generatedDoc) {
       setIsSaving(true);
       try {
-        const result = await saveFinalTranscript(generatedDoc);
+        const result = await saveFinalTranscript(generatedDoc, template);
         if (result.success) {
           resetRecording();
-          router.push(`/notes/${result.id}`);
+          alert("Saved successfully to your notes!");
         } else {
           alert("Failed to save transcript.");
         }
@@ -70,6 +75,30 @@ export function TranscriberClient() {
         setIsSaving(false);
       }
     }
+  };
+
+  const handleExportPDF = async () => {
+    const element = document.getElementById('generated-doc');
+    if (!element) return;
+    const html2pdf = (await import('html2pdf.js')).default;
+    const opt = {
+      margin:       1,
+      filename:     `${template}-${new Date().toISOString().slice(0,10)}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const openSavedNotes = async () => {
+    setShowSavedNotes(true);
+    setIsLoadingNotes(true);
+    const result = await getSavedTranscripts();
+    if (result.success) {
+      setSavedNotes(result.notes);
+    }
+    setIsLoadingNotes(false);
   };
 
   return (
@@ -125,6 +154,10 @@ export function TranscriberClient() {
                 <span className="text-sm font-medium text-muted-foreground">{statusMsg}</span>
               </div>
             )}
+            
+            <Button variant="outline" onClick={openSavedNotes} className="ml-auto rounded-full font-bold">
+              View Saved Notes
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -132,13 +165,20 @@ export function TranscriberClient() {
       {/* Streaming Result View */}
       {completion && (
         <Card className="min-h-[200px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-indigo-200 bg-indigo-100 dark:bg-indigo-900/40 flex items-center gap-2">
-             {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-indigo-600" /> : <Save className="w-5 h-5 text-indigo-600" />}
-             <span className="font-bold text-indigo-900 dark:text-indigo-300">
-               {isLoading ? "Gemini is generating your document..." : "Generation Complete"}
-             </span>
+          <div className="p-4 border-b border-indigo-200 bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-between gap-2">
+             <div className="flex items-center gap-2">
+               {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-indigo-600" /> : <Save className="w-5 h-5 text-indigo-600" />}
+               <span className="font-bold text-indigo-900 dark:text-indigo-300">
+                 {isLoading ? "Mistral is generating your document..." : "Generation Complete"}
+               </span>
+             </div>
+             {!isLoading && (
+               <Button onClick={handleExportPDF} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                 <Download className="w-4 h-4" /> Export PDF
+               </Button>
+             )}
           </div>
-          <div className="p-6 overflow-y-auto prose prose-indigo max-w-none">
+          <div id="generated-doc" className="p-6 overflow-y-auto prose prose-indigo max-w-none bg-white dark:bg-transparent">
             <Markdown>{completion}</Markdown>
           </div>
         </Card>
@@ -197,11 +237,44 @@ export function TranscriberClient() {
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm disabled:opacity-50 transition-colors"
             >
               {(isLoading || isSaving) ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {isLoading ? 'Generating...' : isSaving ? 'Saving...' : 'Process with Gemini & Save'}
+              {isLoading ? 'Generating...' : isSaving ? 'Saving...' : 'Process with Mistral & Save'}
             </button>
           </div>
         )}
       </Card>
+
+      <Dialog open={showSavedNotes} onOpenChange={setShowSavedNotes}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Saved Meetings & Reports</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {isLoadingNotes ? (
+              <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
+            ) : savedNotes.length === 0 ? (
+              <p className="text-muted-foreground text-center p-8">No saved meeting notes found.</p>
+            ) : (
+              savedNotes.map((note) => (
+                <Card key={note.id} className="p-4 border border-black/10">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-lg">{note.title}</h3>
+                      <p className="text-xs text-muted-foreground">{new Date(note.createdAt).toLocaleString()}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => router.push(`/notes/${note.id}`)}>
+                      Open Full Note
+                    </Button>
+                  </div>
+                  <div className="prose prose-sm max-w-none max-h-32 overflow-hidden relative">
+                    <Markdown>{note.content}</Markdown>
+                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-background to-transparent" />
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

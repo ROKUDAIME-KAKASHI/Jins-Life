@@ -3,13 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 
 export async function cleanAndSaveTranscript(rawTranscript: string) {
   try {
-    // Use Gemini to clean up the transcript
+    // Use Mistral to clean up the transcript
     const { text: cleanedTranscript } = await generateText({
-      model: google('gemini-flash-latest'),
+      model: mistral('mistral-large-latest'),
       system: `You are an expert executive assistant. You will be given a raw, diarized meeting transcript (e.g. Speaker 0: ...).
 Your job is to generate a professional Meeting Document with the following structure in Markdown:
 
@@ -43,11 +43,12 @@ Your job is to generate a professional Meeting Document with the following struc
   }
 }
 
-export async function saveFinalTranscript(cleanedTranscript: string) {
+export async function saveFinalTranscript(cleanedTranscript: string, template: string = "MOM") {
   try {
+    const titlePrefix = template === "Report" ? "Report" : "Minutes of Meeting";
     const note = await prisma.note.create({
       data: {
-        title: `Meeting Document - ${new Date().toLocaleString()}`,
+        title: `${titlePrefix} - ${new Date().toLocaleString()}`,
         content: cleanedTranscript,
         tags: "meeting, transcript, ai-processed",
       },
@@ -57,5 +58,20 @@ export async function saveFinalTranscript(cleanedTranscript: string) {
   } catch (error) {
     console.error("Failed to save final transcript:", error);
     return { success: false, error: "Failed to process transcript" };
+  }
+}
+
+export async function getSavedTranscripts() {
+  try {
+    const notes = await prisma.note.findMany({
+      where: {
+        tags: { contains: "meeting" }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return { success: true, notes };
+  } catch (error) {
+    console.error("Failed to fetch transcripts:", error);
+    return { success: false, notes: [] };
   }
 }
