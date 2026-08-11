@@ -31,12 +31,14 @@ export function TranscriberClient() {
   const [showSavedNotes, setShowSavedNotes] = useState(false);
   const [savedNotes, setSavedNotes] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [uiError, setUiError] = useState<string | null>(null);
   const router = useRouter();
 
   const { completion, complete, isLoading } = useCompletion({
     api: "/api/meetings/process",
     onError: (err) => {
       console.error("Completion Error:", err);
+      setUiError(`Mistral Error: ${err.message}`);
       alert(`Mistral Error: ${err.message}`);
     }
   });
@@ -56,6 +58,7 @@ export function TranscriberClient() {
   };
 
   const processAndSaveNote = async () => {
+    setUiError(null);
     const fullTranscript = getFullRawTranscript();
     if (!fullTranscript.trim()) return;
     
@@ -82,17 +85,25 @@ export function TranscriberClient() {
             resetRecording();
             router.push(`/notes`); // Immediately redirect to Notes so the user SEES it
           } else {
+            setUiError(`Database Error: ${result.error}`);
             alert(`Failed to save transcript: ${result.error}`);
           }
         } catch (e: any) {
           console.error(e);
+          setUiError(`Error saving note: ${e.message}`);
           alert(`Error saving note: ${e.message}`);
         } finally {
           setIsSaving(false);
         }
+      } else {
+        // If generatedDoc is falsy and it didn't throw, Mistral returned nothing.
+        if (!uiError) {
+          setUiError("Mistral returned an empty response. Please check your API key or limits.");
+        }
       }
     } catch (err: any) {
       console.error("Process failed:", err);
+      setUiError(`Process failed: ${err.message}`);
     }
   };
 
@@ -313,6 +324,12 @@ export function TranscriberClient() {
                 {isLoading ? 'Generating...' : isSaving ? 'Saving...' : 'Process with Mistral & Save'}
               </button>
             </div>
+          </div>
+        )}
+        
+        {uiError && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium">
+            {uiError}
           </div>
         )}
       </Card>
