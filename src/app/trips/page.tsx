@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addTrips(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const destination = formData.get("destination") as string; if(destination) data.destination = destination;
  const startDate = formData.get("startDate") as string; if(startDate) data.startDate = new Date(startDate);
@@ -20,6 +24,10 @@ async function addTrips(formData: FormData) {
 }
 
 export default async function TripsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.trip.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

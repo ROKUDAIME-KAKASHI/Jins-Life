@@ -11,6 +11,10 @@ export const metadata = {
 };
 
 export default async function TodayPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();

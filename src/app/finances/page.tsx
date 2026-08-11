@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addExpense(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const amountStr = formData.get("amount") as string;
  const category = formData.get("category") as string;
  const description = formData.get("description") as string;
@@ -27,6 +31,10 @@ async function addExpense(formData: FormData) {
 }
 
 export default async function FinancesPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const expenses = await prisma.expense.findMany({ where: { userId }, 
  orderBy: { date: 'desc' },
  });

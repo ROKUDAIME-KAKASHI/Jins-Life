@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addProjects(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const title = formData.get("title") as string; if(title) data.title = title;
  const description = formData.get("description") as string; if(description) data.description = description;
@@ -19,6 +23,10 @@ async function addProjects(formData: FormData) {
 }
 
 export default async function ProjectsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.project.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

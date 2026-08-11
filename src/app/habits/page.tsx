@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addHabit(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const title = formData.get("title") as string;
  const frequency = formData.get("frequency") as string;
  if (!title) return;
@@ -16,6 +20,10 @@ async function addHabit(formData: FormData) {
 }
 
 export default async function HabitsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const habits = await prisma.habit.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addCRM(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const name = formData.get("name") as string; if(name) data.name = name;
  const email = formData.get("email") as string; if(email) data.email = email;
@@ -20,6 +24,10 @@ async function addCRM(formData: FormData) {
 }
 
 export default async function CRMPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.contact.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

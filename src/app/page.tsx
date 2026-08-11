@@ -29,6 +29,10 @@ const modules = [
 ];
 
 export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const [taskCount, habitCount, goalCount, latestInsight] = await Promise.all([
  prisma.task.count({ where: { userId,  status: "TODO" } }),
  prisma.habit.count(),

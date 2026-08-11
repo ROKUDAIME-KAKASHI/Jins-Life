@@ -6,6 +6,10 @@ import { TaskList } from "./TaskList";
 import { revalidatePath } from "next/cache";
 
 export default async function TasksPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const tasks = await prisma.task.findMany({ where: { userId }, 
  orderBy: [
  { status: 'asc' }, // TODO before DONE

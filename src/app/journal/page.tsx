@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addJournal(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const mood = formData.get("mood") as string; if(mood) data.mood = mood;
  const entry = formData.get("entry") as string; if(entry) data.entry = entry;
@@ -19,6 +23,10 @@ async function addJournal(formData: FormData) {
 }
 
 export default async function JournalPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.journal.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

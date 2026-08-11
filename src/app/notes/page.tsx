@@ -9,6 +9,10 @@ import Link from "next/link";
 
 async function addNotes(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const title = formData.get("title") as string; if(title) data.title = title;
  const tags = formData.get("tags") as string; if(tags) data.tags = tags;
@@ -21,6 +25,10 @@ async function addNotes(formData: FormData) {
 }
 
 export default async function NotesPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.note.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

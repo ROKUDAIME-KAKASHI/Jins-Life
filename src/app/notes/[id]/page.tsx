@@ -9,6 +9,10 @@ import Markdown from "react-markdown";
 import { PdfExportButton } from "@/components/notes/PdfExportButton";
 
 export default async function NoteViewPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const resolvedParams = await params;
  const note = await prisma.note.findUnique({
  where: { id: resolvedParams.id }

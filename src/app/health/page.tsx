@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addHealth(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const data: any = {};
  const type = formData.get("type") as string; if(type) data.type = type;
  const value = parseFloat(formData.get("value") as string); if(!isNaN(value)) data.value = value;
@@ -20,6 +24,10 @@ async function addHealth(formData: FormData) {
 }
 
 export default async function HealthPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const items = await prisma.healthMetric.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });

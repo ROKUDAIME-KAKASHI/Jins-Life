@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { CalendarClient } from "./CalendarClient";
 
 export default async function CalendarPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const events = await prisma.event.findMany({ where: { userId }, 
  orderBy: { startTime: 'asc' },
  });

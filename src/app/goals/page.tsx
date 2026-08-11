@@ -8,6 +8,10 @@ import { DeleteButton } from "@/components/DeleteButton";
 
 async function addGoal(formData: FormData) {
  "use server";
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
  const title = formData.get("title") as string;
  const description = formData.get("description") as string;
  const targetDateStr = formData.get("targetDate") as string;
@@ -24,6 +28,10 @@ async function addGoal(formData: FormData) {
 }
 
 export default async function GoalsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return <div className="p-8 text-white">Unauthorized. Please log in.</div>;
+  const userId = session.user.id;
+
  const goals = await prisma.goal.findMany({ where: { userId }, 
  orderBy: { createdAt: 'desc' },
  });
