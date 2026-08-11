@@ -97,12 +97,31 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       setStatusMsg("Connecting to Deepgram...");
       
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const captureSystem = window.confirm("To capture what OTHER people say (System Audio), you must share your screen or tab and ensure 'Share Audio' is checked.\\n\\nClick OK to capture system audio + mic, or Cancel to only record your microphone.");
+        
+        let micPromise = navigator.mediaDevices.getUserMedia({ audio: true });
+        let sysPromise = captureSystem ? navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) : Promise.resolve(null);
+        
+        const [stream, sysStream] = await Promise.all([
+          micPromise.catch(e => null), 
+          sysPromise.catch(e => null)
+        ]);
+
+        if (!stream) {
+           throw new Error("Microphone access is required.");
+        }
 
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         const ac = new AudioContext();
         audioContextRef.current = ac;
+        
         const source = ac.createMediaStreamSource(stream);
+        let sysSource: MediaStreamAudioSourceNode | null = null;
+        
+        if (sysStream && sysStream.getAudioTracks().length > 0) {
+          const sysAudioStream = new MediaStream(sysStream.getAudioTracks());
+          sysSource = ac.createMediaStreamSource(sysAudioStream);
+        }
 
         const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
         if (!apiKey) {
@@ -111,7 +130,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         }
 
         const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&encoding=linear16&sample_rate=${ac.sampleRate}`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?\${modelParam}language=\${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&encoding=linear16&sample_rate=\${ac.sampleRate}`, [
           'token', apiKey
         ]);
         
@@ -131,6 +150,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           (window as any).__sharedAudioProcessor = processor;
           
           source.connect(processor);
+          if (sysSource) sysSource.connect(processor);
+          
           processor.connect(ac.destination);
           
           processor.onaudioprocess = (e) => {
@@ -151,6 +172,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
             stop: () => {
               processor.disconnect();
               source.disconnect();
+              if (sysSource) sysSource.disconnect();
+              if (sysStream) sysStream.getTracks().forEach(t => t.stop());
               (window as any).__sharedAudioProcessor = null;
             },
             stream: stream
