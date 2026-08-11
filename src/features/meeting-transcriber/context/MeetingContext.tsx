@@ -136,61 +136,47 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // We rely on Deepgram's auto-detect for WebM/Opus since we send MediaRecorder chunks!
         const modelParam = (selectedLanguage === 'en' || selectedLanguage === 'hi') ? 'model=nova-2&' : '';
-        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?\${modelParam}language=\${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300&encoding=linear16&sample_rate=\${ac.sampleRate}`, [
+        const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?${modelParam}language=${selectedLanguage}&diarize=true&punctuate=true&interim_results=true&endpointing=300`, [
           'token', apiKey
         ]);
         
         socketRef.current = socket;
 
         socket.onopen = () => {
-          setStatusMsg("Listening (Raw PCM - Microsoft Word Quality)...");
+          setStatusMsg("Listening (WebM Opus Quality)...");
           setIsRecording(true);
           
           if (ac.state === 'suspended') {
             ac.resume();
           }
           
-          const processor = ac.createScriptProcessor(4096, 1, 1);
-          
-          // CRITICAL: Anchor the processor to window so Chrome doesn't kill it after 10s
-          (window as any).__sharedAudioProcessor = processor;
-          
-          mixer.connect(processor);
-          processor.connect(ac.destination);
-          
-          processor.onaudioprocess = (e) => {
-            // CRITICAL: Mute output to prevent system audio echoing back to speakers!
-            if (e.outputBuffer) {
-              for (let c = 0; c < e.outputBuffer.numberOfChannels; c++) {
-                e.outputBuffer.getChannelData(c).fill(0);
-              }
-            }
+          const dest = ac.createMediaStreamDestination();
+          mixer.connect(dest); // Mixer output goes securely to the destination stream ONLY!
 
-            if (socket.readyState === WebSocket.OPEN) {
-              const inputData = e.inputBuffer.getChannelData(0);
-              const int16Data = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) {
-                let s = inputData[i];
-                if (isNaN(s)) s = 0;
-                s = Math.max(-1, Math.min(1, s));
-                int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-              }
-              socket.send(int16Data.buffer);
+          const mediaRecorder = new MediaRecorder(dest.stream);
+          
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+              socket.send(e.data);
             }
           };
           
-          // Dummy MediaRecorder interface for the stop function
-          (mediaRecorderRef as any).current = {
-            state: 'recording',
-            stop: () => {
-              processor.disconnect();
-              source.disconnect();
-              if (sysSource) sysSource.disconnect();
-              if (sysStream) sysStream.getTracks().forEach(t => t.stop());
-              (window as any).__sharedAudioProcessor = null;
-            },
-            stream: stream
+          mediaRecorder.start(250); // Send audio chunks every 250ms
+          
+          mediaRecorderRef.current = mediaRecorder;
+          
+          // Override stop to also clean up our tracks
+          const originalStop = mediaRecorder.stop.bind(mediaRecorder);
+          mediaRecorder.stop = () => {
+            originalStop();
+            source.disconnect();
+            mixer.disconnect();
+            dest.disconnect();
+            if (sysSource) sysSource.disconnect();
+            if (sysStream) sysStream.getTracks().forEach(t => t.stop());
+            if (stream) stream.getTracks().forEach(t => t.stop());
           };
         };
 
