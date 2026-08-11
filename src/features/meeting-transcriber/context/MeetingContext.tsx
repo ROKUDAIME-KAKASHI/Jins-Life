@@ -15,6 +15,8 @@ interface MeetingContextType {
   statusMsg: string;
   selectedLanguage: string;
   setSelectedLanguage: (lang: string) => void;
+  captureSystemAudio: boolean;
+  setCaptureSystemAudio: (val: boolean) => void;
   toggleRecording: () => Promise<void>;
   resetRecording: () => void;
 }
@@ -28,6 +30,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [statusMsg, setStatusMsg] = useState("Ready");
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [captureSystemAudio, setCaptureSystemAudio] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -97,10 +100,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       setStatusMsg("Connecting to Deepgram...");
       
       try {
-        const captureSystem = window.confirm("To capture what OTHER people say (System Audio), you must share your screen or tab and ensure 'Share Audio' is checked.\\n\\nClick OK to capture system audio + mic, or Cancel to only record your microphone.");
-        
         let micPromise = navigator.mediaDevices.getUserMedia({ audio: true });
-        let sysPromise = captureSystem ? navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) : Promise.resolve(null);
+        let sysPromise = captureSystemAudio ? navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }) : Promise.resolve(null);
         
         const [stream, sysStream] = await Promise.all([
           micPromise.catch(e => null), 
@@ -227,6 +228,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       statusMsg,
       selectedLanguage,
       setSelectedLanguage,
+      captureSystemAudio,
+      setCaptureSystemAudio,
       toggleRecording,
       resetRecording
     }}>

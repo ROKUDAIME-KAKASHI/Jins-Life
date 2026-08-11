@@ -20,6 +20,8 @@ export function TranscriberClient() {
     statusMsg,
     selectedLanguage,
     setSelectedLanguage,
+    captureSystemAudio,
+    setCaptureSystemAudio,
     toggleRecording,
     resetRecording
   } = useMeeting();
@@ -134,6 +136,17 @@ export function TranscriberClient() {
                 <option value="ml">Malayalam</option>
                 <option value="kn">Kannada</option>
               </select>
+
+              <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                <input 
+                  type="checkbox" 
+                  checked={captureSystemAudio}
+                  onChange={(e) => setCaptureSystemAudio(e.target.checked)}
+                  disabled={isRecording}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                />
+                Capture System Audio (Zoom/Teams)
+              </label>
 
               {isRecording && (
                 <div className="flex flex-col">
