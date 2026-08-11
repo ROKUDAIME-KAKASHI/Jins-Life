@@ -49,7 +49,7 @@ Your job is to generate a professional Meeting Document with the following struc
     }
 
     const result = await generateText({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-flash-latest'),
       system: systemPrompt,
       prompt: `Here is the raw diarized transcript from Deepgram:\n\n${prompt}`,
     });
