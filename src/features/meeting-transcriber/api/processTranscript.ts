@@ -54,7 +54,7 @@ Your job is to generate a professional Meeting Document with the following struc
       prompt: `Here is the raw diarized transcript from Deepgram:\n\n${prompt}`,
     });
 
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error("Error in processTranscript:", error);
     return new Response(JSON.stringify({ error: error.message || "Unknown error occurred" }), { 
